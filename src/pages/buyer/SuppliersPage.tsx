@@ -13,7 +13,7 @@ import { withCount } from '@/lib/format';
 import { useAppState } from '@/store/AppContext';
 import { productsOfSupplier } from '@/store/selectors';
 
-type Sort = 'rating' | 'orders' | 'minOrder' | 'name';
+type Sort = 'rating' | 'orders' | 'name';
 
 export function SuppliersPage() {
   const state = useAppState();
@@ -50,8 +50,6 @@ export function SuppliersPage() {
     switch (sort) {
       case 'orders':
         return list.sort((a, b) => b.ordersCount - a.ordersCount);
-      case 'minOrder':
-        return list.sort((a, b) => a.minOrder - b.minOrder);
       case 'name':
         return list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
       default:
@@ -173,7 +171,6 @@ export function SuppliersPage() {
             >
               <option value="rating">Сначала с высоким рейтингом</option>
               <option value="orders">Сначала популярные</option>
-              <option value="minOrder">Минимальный заказ ниже</option>
               <option value="name">По названию</option>
             </Select>
           </div>

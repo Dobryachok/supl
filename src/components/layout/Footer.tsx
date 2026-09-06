@@ -51,7 +51,7 @@ export function Footer() {
             </p>
             <p className="flex items-center gap-2">
               <MapPin className="size-3.5 text-ink-400" />
-              Москва, ул. Складочная, 1
+              Красноярск, ул. Маерчака, 12
             </p>
           </div>
         </div>

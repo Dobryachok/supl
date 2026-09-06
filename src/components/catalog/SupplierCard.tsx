@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Clock, Heart, Mail, MapPin, Truck } from 'lucide-react';
+import { BadgeCheck, Clock, Heart, Mail, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Rating } from '@/components/ui/Rating';
@@ -62,10 +62,6 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
           </div>
 
           <dl className="mt-3 grid gap-x-6 gap-y-1.5 text-[13px] sm:grid-cols-2">
-            <div className="flex items-center gap-1.5 text-ink-600">
-              <Truck className="size-3.5 text-ink-400" />
-              Мин. заказ {money(supplier.minOrder)}
-            </div>
             <div className="flex items-center gap-1.5 text-ink-600">
               <Clock className="size-3.5 text-ink-400" />
               Доставка: {deliveryDaysLabel(supplier)}

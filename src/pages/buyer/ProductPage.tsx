@@ -290,8 +290,7 @@ export function ProductPage() {
                     {deliveryDates.map((d) => dateFull(d)).join(', ')}
                   </p>
                   <p>
-                    Минимальная сумма заказа {money(supplier.minOrder)}, доставка{' '}
-                    {money(supplier.deliveryFee)} и бесплатно от {money(supplier.freeDeliveryFrom)}.
+                    Доставка {money(supplier.deliveryFee)} и бесплатно от {money(supplier.freeDeliveryFrom)}.
                   </p>
                   <p>Способы оплаты: {supplier.paymentMethods.map((m) => paymentLabels[m]).join(', ')}.</p>
                   <p className="text-ink-500">Зоны доставки: {supplier.deliveryZones.join(' · ')}</p>
@@ -355,8 +354,7 @@ export function ProductPage() {
                           {offerSupplier.name}
                         </Link>
                         <p className="text-xs text-ink-500">
-                          {offer.packSize} · {offer.country} · мин. заказ{' '}
-                          {money(offerSupplier.minOrder)}
+                          {offer.packSize} · {offer.country}
                         </p>
                       </div>
                       <div className="text-right">
@@ -401,10 +399,6 @@ export function ProductPage() {
             <Rating value={supplier.rating} count={supplier.reviewsCount} className="mt-2.5" />
 
             <dl className="mt-3 space-y-1.5 border-t border-ink-100 pt-3 text-[13px]">
-              <div className="flex justify-between gap-2">
-                <dt className="text-ink-500">Мин. заказ</dt>
-                <dd className="font-medium text-ink-800">{money(supplier.minOrder)}</dd>
-              </div>
               <div className="flex justify-between gap-2">
                 <dt className="text-ink-500">Доставка</dt>
                 <dd className="font-medium text-ink-800">{money(supplier.deliveryFee)}</dd>

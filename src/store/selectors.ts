@@ -21,8 +21,6 @@ export interface CartGroup {
   goodsTotal: number;
   deliveryFee: number;
   total: number;
-  minOrderGap: number;
-  meetsMinOrder: boolean;
   nearestDelivery: string;
 }
 
@@ -85,8 +83,6 @@ export function cartGroups(state: AppState): CartGroup[] {
         goodsTotal,
         deliveryFee,
         total: goodsTotal + deliveryFee,
-        minOrderGap: Math.max(0, supplier.minOrder - goodsTotal),
-        meetsMinOrder: goodsTotal >= supplier.minOrder,
         nearestDelivery: nextDeliveryDates(supplier, 1)[0] ?? isoDate(startOfToday()),
       };
     })

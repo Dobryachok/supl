@@ -48,7 +48,6 @@ export interface Supplier {
   description: string;
   hue: number;
   categoryIds: string[];
-  minOrder: number;
   deliveryFee: number;
   freeDeliveryFrom: number;
   /** Дни недели доставки: 1 — понедельник, 7 — воскресенье. */

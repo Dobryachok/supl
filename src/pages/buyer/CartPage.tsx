@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle,
   ArrowRight,
   BookmarkPlus,
   ShoppingCart,
   Trash2,
   Truck,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -37,8 +35,6 @@ export function CartPage() {
   const availableIds = groups.map((g) => g.supplier.id);
   const activeSelection = selected.filter((id) => availableIds.includes(id));
   const selectedGroups = groups.filter((g) => activeSelection.includes(g.supplier.id));
-  const readyGroups = selectedGroups.filter((g) => g.meetsMinOrder);
-  const blockedGroups = selectedGroups.filter((g) => !g.meetsMinOrder);
 
   const goodsTotal = selectedGroups.reduce((sum, g) => sum + g.goodsTotal, 0);
   const deliveryTotal = selectedGroups.reduce((sum, g) => sum + g.deliveryFee, 0);
@@ -149,8 +145,7 @@ export function CartPage() {
                     </Link>
                     <p className="text-xs text-ink-500">
                       Доставка: {deliveryDaysLabel(group.supplier)} · ближайшая{' '}
-                      {relativeDay(group.nearestDelivery)} · мин. заказ{' '}
-                      {money(group.supplier.minOrder)}
+                      {relativeDay(group.nearestDelivery)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -162,23 +157,6 @@ export function CartPage() {
                     </p>
                   </div>
                 </header>
-
-                {!group.meetsMinOrder && (
-                  <div className="flex items-start gap-2 border-b border-warn-100 bg-warn-50 px-4 py-2.5 text-[13px] text-warn-600">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    <span>
-                      До минимальной суммы заказа не хватает{' '}
-                      <strong>{money(group.minOrderGap)}</strong>. Добавьте позиции или снимите
-                      выбор с этой группы.{' '}
-                      <Link
-                        to={`/suppliers/${group.supplier.id}`}
-                        className="font-semibold underline"
-                      >
-                        Смотреть каталог поставщика
-                      </Link>
-                    </span>
-                  </div>
-                )}
 
                 <ul className="divide-y divide-ink-100">
                   {group.lines.map((line) => (
@@ -243,7 +221,6 @@ export function CartPage() {
                   </Button>
                   <Button
                     size="sm"
-                    disabled={!group.meetsMinOrder}
                     icon={<ArrowRight className="size-3.5" />}
                     onClick={() => navigate(`/checkout?suppliers=${group.supplier.id}`)}
                   >
@@ -285,25 +262,18 @@ export function CartPage() {
               </span>
             </div>
 
-            {blockedGroups.length > 0 && (
-              <p className="mt-3 rounded-lg bg-warn-50 p-2.5 text-xs text-warn-600">
-                {withCount(blockedGroups.length, 'группа', 'группы', 'групп')} не добрала
-                минимальную сумму — они не попадут в заявки.
-              </p>
-            )}
-
             <Button
               block
               size="lg"
               className="mt-3"
-              disabled={readyGroups.length === 0}
+              disabled={selectedGroups.length === 0}
               onClick={() =>
                 navigate(
-                  `/checkout?suppliers=${readyGroups.map((g) => g.supplier.id).join(',')}`,
+                  `/checkout?suppliers=${selectedGroups.map((g) => g.supplier.id).join(',')}`,
                 )
               }
             >
-              Оформить {readyGroups.length > 1 ? `${readyGroups.length} заявки` : 'заявку'}
+              Оформить {selectedGroups.length > 1 ? `${selectedGroups.length} заявки` : 'заявку'}
             </Button>
             <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
               <Truck className="size-3.5" />
@@ -317,14 +287,7 @@ export function CartPage() {
               {groups.map((group) => (
                 <li key={group.supplier.id} className="flex items-center justify-between gap-2 text-[13px]">
                   <span className="truncate text-ink-600">{group.supplier.name}</span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <span className="font-medium text-ink-900">{money(group.total)}</span>
-                    {!group.meetsMinOrder && (
-                      <Badge tone="warn" size="sm">
-                        мин.
-                      </Badge>
-                    )}
-                  </span>
+                  <span className="font-medium text-ink-900">{money(group.total)}</span>
                 </li>
               ))}
             </ul>

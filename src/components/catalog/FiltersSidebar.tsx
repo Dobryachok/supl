@@ -218,7 +218,7 @@ export function FiltersSidebar({
         )}
 
         <Group title="Цена">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2">
             <Input
               placeholder={String(Math.floor(minPrice))}
               value={filters.priceFrom}

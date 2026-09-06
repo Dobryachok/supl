@@ -25,7 +25,7 @@ import { NotificationsMenu } from './NotificationsMenu';
 import { RoleSwitcher } from './RoleSwitcher';
 import { SearchBox } from './SearchBox';
 
-const cities = ['Москва', 'Санкт-Петербург', 'Краснодар', 'Казань', 'Екатеринбург'];
+const cities = ['Красноярск', 'Санкт-Петербург', 'Краснодар', 'Казань', 'Екатеринбург'];
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (

@@ -165,11 +165,7 @@ export function SupplierPage() {
           </div>
         </div>
 
-        <dl className="mt-5 grid gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg bg-ink-50 p-3">
-            <dt className="text-[11px] tracking-wide text-ink-500 uppercase">Минимальный заказ</dt>
-            <dd className="mt-1 text-[15px] font-bold text-ink-900">{money(supplier.minOrder)}</dd>
-          </div>
+        <dl className="mt-5 grid gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-lg bg-ink-50 p-3">
             <dt className="text-[11px] tracking-wide text-ink-500 uppercase">Доставка</dt>
             <dd className="mt-1 text-[15px] font-bold text-ink-900">
@@ -270,8 +266,7 @@ export function SupplierPage() {
                 ))}
               </ul>
               <p className="mt-4 text-[13px] text-ink-600">
-                Минимальная сумма заказа {money(supplier.minOrder)}. Доставка{' '}
-                {money(supplier.deliveryFee)}, бесплатно от {money(supplier.freeDeliveryFrom)}.
+                Доставка {money(supplier.deliveryFee)}, бесплатно от {money(supplier.freeDeliveryFrom)}.
               </p>
             </div>
           </div>

@@ -62,7 +62,7 @@ export function ProductShelf({
       </div>
       <div className="scroll-thin -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 2xl:grid-cols-5">
         {products.map((product) => (
-          <div key={product.id} className="w-[220px] shrink-0 lg:w-auto">
+          <div key={product.id} className="flex h-full w-[220px] shrink-0 lg:w-auto">
             <ProductCard product={product} />
           </div>
         ))}

@@ -35,7 +35,7 @@ export function CheckoutPage() {
   const groups = useMemo(
     () =>
       allGroups.filter(
-        (g) => g.meetsMinOrder && (requested.length === 0 || requested.includes(g.supplier.id)),
+        (g) => requested.length === 0 || requested.includes(g.supplier.id),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [allGroups, searchParams],
@@ -185,7 +185,7 @@ export function CheckoutPage() {
       <div className="page pt-6">
         <EmptyState
           title="Нечего оформлять"
-          text="Группы поставщиков не выбраны или не добрали минимальную сумму заказа."
+          text="Группы поставщиков не выбраны или корзина пуста."
           action={<LinkButton to="/cart">Вернуться в корзину</LinkButton>}
         />
       </div>

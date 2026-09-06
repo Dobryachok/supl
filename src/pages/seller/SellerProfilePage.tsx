@@ -3,8 +3,9 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BadgeCheck,
-  ExternalLink,
   Eye,
+  LayoutGrid,
+  List,
   Package,
   Plus,
   Save,
@@ -16,15 +17,28 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/Field';
-import { SupplierLogo } from '@/components/ui/ProductImage';
+import { SupplierLogo, ProductImage } from '@/components/ui/ProductImage';
 import { Rating } from '@/components/ui/Rating';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { categories } from '@/data/categories';
-import { money, paymentLabels, withCount } from '@/lib/format';
+import { categoryById, categories } from '@/data/categories';
+import { cn } from '@/lib/cn';
+import { money, paymentLabels, qty as formatQty, withCount } from '@/lib/format';
 import { useAppState, useDispatch } from '@/store/AppContext';
-import { productsOfSupplier, sellerOrders, supplierRatingSummary } from '@/store/selectors';
-import type { PaymentMethod, Supplier } from '@/types';
+import { discountPct, productsOfSupplier, sellerOrders, supplierRatingSummary } from '@/store/selectors';
+import type { PaymentMethod, Product, Supplier } from '@/types';
+
+const CATALOG_VIEW_KEY = 'supl.seller.profile.catalogView';
+
+type CatalogView = 'list' | 'grid';
+
+function loadCatalogView(): CatalogView {
+  try {
+    return localStorage.getItem(CATALOG_VIEW_KEY) === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
 
 const weekDays = [
   { value: 1, label: 'Пн' },
@@ -48,6 +62,7 @@ export function SellerProfilePage() {
   const [draft, setDraft] = useState<Supplier>(supplier);
   const [newWindow, setNewWindow] = useState('');
   const [newZone, setNewZone] = useState('');
+  const [catalogView, setCatalogView] = useState<CatalogView>(loadCatalogView);
 
   useEffect(() => {
     setDraft(supplier);
@@ -202,14 +217,7 @@ export function SellerProfilePage() {
           <>
             <section className="card p-4">
               <h2 className="text-[15px]">Условия заказа</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <Field label="Минимальная сумма заказа, ₽">
-                  <Input
-                    inputMode="numeric"
-                    value={String(draft.minOrder)}
-                    onChange={(e) => patch({ minOrder: Number(e.target.value.replace(/\D/g, '')) || 0 })}
-                  />
-                </Field>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Field label="Стоимость доставки, ₽">
                   <Input
                     inputMode="numeric"
@@ -309,7 +317,7 @@ export function SellerProfilePage() {
                 items={draft.deliveryZones}
                 value={newZone}
                 onValueChange={setNewZone}
-                placeholder="Москва в пределах ТТК"
+                placeholder="Красноярск, центр и правый берег"
                 onAdd={(value) => patch({ deliveryZones: [...draft.deliveryZones, value] })}
                 onRemove={(index) =>
                   patch({ deliveryZones: draft.deliveryZones.filter((_, i) => i !== index) })
@@ -403,7 +411,43 @@ export function SellerProfilePage() {
                   доступны для заказа рестораном
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex overflow-hidden rounded-lg border border-ink-300">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCatalogView('list');
+                      localStorage.setItem(CATALOG_VIEW_KEY, 'list');
+                    }}
+                    className={cn(
+                      'flex size-9 cursor-pointer items-center justify-center',
+                      catalogView === 'list'
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-ink-500 hover:bg-ink-50',
+                    )}
+                    aria-label="Список"
+                    title="Список"
+                  >
+                    <List className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCatalogView('grid');
+                      localStorage.setItem(CATALOG_VIEW_KEY, 'grid');
+                    }}
+                    className={cn(
+                      'flex size-9 cursor-pointer items-center justify-center border-l border-ink-200',
+                      catalogView === 'grid'
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-ink-500 hover:bg-ink-50',
+                    )}
+                    aria-label="Карточки"
+                    title="Карточки"
+                  >
+                    <LayoutGrid className="size-4" />
+                  </button>
+                </div>
                 <LinkButton to="/seller/products" variant="secondary">
                   Управлять каталогом
                 </LinkButton>
@@ -413,46 +457,128 @@ export function SellerProfilePage() {
               </div>
             </div>
 
-            <ul className="mt-3 divide-y divide-ink-100">
-              {products.slice(0, 8).map((product) => (
-                <li key={product.id} className="flex flex-wrap items-center gap-3 py-2.5">
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      to={`/product/${product.id}`}
-                      className="text-[13px] font-medium text-ink-900 hover:text-brand-700"
-                    >
-                      {product.name}
-                    </Link>
-                    <p className="text-xs text-ink-500">
-                      арт. {product.article} · остаток {product.stock}
-                    </p>
-                  </div>
-                  {!product.isActive && <Badge tone="neutral">Скрыт</Badge>}
-                  <span className="text-[13px] font-semibold text-ink-900">
-                    {money(product.price)}
-                  </span>
-                  <Link
-                    to={`/seller/products/${product.id}/edit`}
-                    className="text-[13px] font-medium text-brand-600 hover:underline"
-                  >
-                    Изменить
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            {products.length > 8 && (
-              <Link
-                to="/seller/products"
-                className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-brand-600 hover:underline"
-              >
-                Ещё {products.length - 8} позиций
-                <ExternalLink className="size-3.5" />
-              </Link>
+            {products.length === 0 ? (
+              <p className="mt-4 text-[13px] text-ink-500">В каталоге пока нет товаров.</p>
+            ) : catalogView === 'list' ? (
+              <ul className="mt-3 divide-y divide-ink-100">
+                {products.map((product) => (
+                  <ProfileProductRow key={product.id} product={product} />
+                ))}
+              </ul>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
+                  <ProfileProductCard key={product.id} product={product} />
+                ))}
+              </div>
             )}
           </section>
         )}
       </div>
     </div>
+  );
+}
+
+function ProfileProductRow({ product }: { product: Product }) {
+  const discount = discountPct(product);
+  return (
+    <li className="flex flex-wrap items-center gap-3 py-2.5">
+      <ProductImage product={product} className="size-10 shrink-0 rounded-lg" />
+      <div className="min-w-0 flex-1">
+        <Link
+          to={`/product/${product.id}`}
+          className="text-[13px] font-medium text-ink-900 hover:text-brand-700"
+        >
+          {product.name}
+        </Link>
+        <p className="text-xs text-ink-500">
+          арт. {product.article} · остаток {formatQty(product.stock, product.unit)} ·{' '}
+          {categoryById.get(product.categoryId)?.name}
+        </p>
+      </div>
+      {discount > 0 && (
+        <Badge tone="danger" size="sm">
+          −{discount}%
+        </Badge>
+      )}
+      {!product.isActive && <Badge tone="neutral">Скрыт</Badge>}
+      <span className="text-[13px] font-semibold text-ink-900">{money(product.price)}</span>
+      <div className="flex items-center gap-2">
+        <Link
+          to={`/product/${product.id}`}
+          className="flex items-center gap-1 text-[13px] font-medium text-ink-500 hover:text-brand-600"
+        >
+          <Eye className="size-3.5" />
+          Витрина
+        </Link>
+        <Link
+          to={`/seller/products/${product.id}/edit`}
+          className="text-[13px] font-medium text-brand-600 hover:underline"
+        >
+          Изменить
+        </Link>
+      </div>
+    </li>
+  );
+}
+
+function ProfileProductCard({ product }: { product: Product }) {
+  const discount = discountPct(product);
+  return (
+    <article className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
+      <Link to={`/product/${product.id}`} className="block">
+        <div className="relative">
+          <ProductImage product={product} className="aspect-square w-full rounded-none" />
+          <div className="absolute top-2 left-2 flex flex-col items-start gap-1">
+            {discount > 0 && (
+              <Badge tone="danger" size="sm">
+                −{discount}%
+              </Badge>
+            )}
+            {product.isNew && <Badge tone="success" size="sm">Новинка</Badge>}
+          </div>
+          {!product.isActive && (
+            <span className="absolute top-2 right-2">
+              <Badge tone="neutral" size="sm">Скрыт</Badge>
+            </span>
+          )}
+        </div>
+      </Link>
+      <div className="p-3">
+        <Link
+          to={`/product/${product.id}`}
+          className="line-clamp-2 text-[13px] font-semibold text-ink-900 hover:text-brand-700"
+        >
+          {product.name}
+        </Link>
+        <p className="mt-0.5 text-xs text-ink-500">
+          арт. {product.article} · {product.packSize}
+        </p>
+        <p className="mt-0.5 text-xs text-ink-500">
+          остаток {formatQty(product.stock, product.unit)}
+        </p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-[17px] font-bold text-ink-900">{money(product.price)}</span>
+          {product.oldPrice && (
+            <span className="text-xs text-ink-400 line-through">{money(product.oldPrice)}</span>
+          )}
+        </div>
+        <div className="mt-2.5 flex gap-2">
+          <LinkButton to={`/seller/products/${product.id}/edit`} size="sm" variant="secondary" block>
+            Изменить
+          </LinkButton>
+          <LinkButton
+            to={`/product/${product.id}`}
+            size="sm"
+            variant="ghost"
+            icon={<Eye className="size-3.5" />}
+            block
+          >
+            Витрина
+          </LinkButton>
+        </div>
+      </div>
+    </article>
   );
 }
 

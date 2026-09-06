@@ -257,11 +257,15 @@ function DeliveryCard({ order }: { order: Order }) {
         order.status === 'delivered' && 'border-warn-100',
       )}
     >
-      <div className="flex flex-wrap items-start gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[2.75rem_minmax(0,1fr)_13.75rem_9.375rem] lg:items-start lg:gap-4">
         {supplier && (
-          <SupplierLogo name={supplier.name} hue={supplier.hue} className="size-11" />
+          <SupplierLogo
+            name={supplier.name}
+            hue={supplier.hue}
+            className="size-11 sm:col-start-1 sm:row-start-1 lg:col-start-1 lg:row-start-1"
+          />
         )}
-        <div className="min-w-[200px] flex-1">
+        <div className="min-w-0 sm:col-start-2 sm:row-start-1 lg:col-start-2 lg:row-start-1">
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to={`/orders/${order.id}`}
@@ -292,32 +296,32 @@ function DeliveryCard({ order }: { order: Order }) {
           </p>
         </div>
 
-        <dl className="min-w-[180px] space-y-1 text-[13px]">
-          <div className="flex items-center gap-1.5 text-ink-700">
+        <dl className="space-y-1 text-[13px] sm:col-span-2 sm:row-start-2 lg:col-span-1 lg:col-start-3 lg:row-start-1">
+          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-x-1.5 text-ink-700">
             <Clock className="size-3.5 text-ink-400" />
-            {order.deliveryWindow}
+            <span>{order.deliveryWindow}</span>
           </div>
-          <div className="flex items-start gap-1.5 text-ink-600">
-            <MapPin className="mt-0.5 size-3.5 shrink-0 text-ink-400" />
+          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-start gap-x-1.5 text-ink-600">
+            <MapPin className="mt-0.5 size-3.5 text-ink-400" />
             <span>
               {outlet?.name}
               <span className="block text-xs text-ink-500">{order.deliveryAddress}</span>
             </span>
           </div>
           {supplier && (
-            <div className="flex items-center gap-1.5 text-ink-600">
+            <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-x-1.5 text-ink-600">
               <Phone className="size-3.5 text-ink-400" />
-              {supplier.contacts.phone}
+              <span>{supplier.contacts.phone}</span>
             </div>
           )}
         </dl>
 
-        <div className="min-w-[150px] text-right">
+        <div className="sm:col-span-2 sm:row-start-3 sm:text-left lg:col-start-4 lg:row-start-1 lg:text-right">
           <p className="text-[17px] font-bold text-ink-900">{money(totals.factTotal)}</p>
           <p className="text-xs text-ink-500">
             {order.deliveryFee === 0 ? 'доставка бесплатно' : `доставка ${money(order.deliveryFee)}`}
           </p>
-          <div className="mt-2 flex flex-wrap justify-end gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-1.5 sm:justify-start lg:justify-end">
             {order.status === 'delivered' ? (
               <LinkButton
                 to={`/orders/${order.id}/acceptance`}

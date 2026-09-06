@@ -64,7 +64,7 @@ export function ProductCard({ product, view = 'grid' }: { product: Product; view
   );
 
   const addBlock = (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-1 items-center gap-2">
       <QtyStepper
         value={amount}
         onChange={setAmount}
@@ -123,11 +123,11 @@ export function ProductCard({ product, view = 'grid' }: { product: Product; view
             <StockLabel product={product} />
           </div>
         </div>
-        <div className="flex shrink-0 flex-col gap-2 sm:w-56 sm:items-end">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:max-w-[17.5rem] sm:items-end">
           {priceBlock}
-          <div className="flex w-full items-center gap-2">
-            {addBlock}
+          <div className="flex w-full min-w-0 items-center gap-2">
             {favoriteButton}
+            {addBlock}
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function ProductCard({ product, view = 'grid' }: { product: Product; view
   }
 
   return (
-    <div className="card group relative flex flex-col p-3 transition-shadow hover:shadow-[var(--shadow-hover)]">
+    <div className="card group relative flex h-full flex-col p-3 transition-shadow hover:shadow-[var(--shadow-hover)]">
       <div className="absolute top-3 right-3 z-10">{favoriteButton}</div>
       <Link to={`/product/${product.id}`} className="relative">
         <ProductImage product={product} className="aspect-square w-full" />
@@ -162,7 +162,8 @@ export function ProductCard({ product, view = 'grid' }: { product: Product; view
         {priceBlock}
         <Link
           to={`/product/${product.id}`}
-          className="mt-1.5 line-clamp-2 text-[13px] leading-snug text-ink-800 hover:text-brand-700"
+          className="mt-1.5 line-clamp-2 min-h-[2.5rem] text-[13px] leading-snug text-ink-800 hover:text-brand-700"
+          title={product.name}
         >
           {product.name}
         </Link>
@@ -183,7 +184,7 @@ export function ProductCard({ product, view = 'grid' }: { product: Product; view
           Минимум {formatQty(product.minQty, product.unit)}
           {product.step > 1 && `, кратно ${formatQty(product.step, product.unit)}`}
         </p>
-        <div className="mt-2.5">{addBlock}</div>
+        <div className="mt-auto pt-2.5">{addBlock}</div>
       </div>
     </div>
   );
