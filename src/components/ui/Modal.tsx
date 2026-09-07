@@ -32,7 +32,7 @@ export interface ModalProps {
   description?: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg';
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const modalSizes = {
@@ -79,7 +79,9 @@ export function Modal({
             <X className="size-4" />
           </button>
         </div>
-        <div className="scroll-thin max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
+        {children != null && (
+          <div className="scroll-thin max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
+        )}
         {footer && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-ink-200 bg-ink-50 px-5 py-3">
             {footer}
