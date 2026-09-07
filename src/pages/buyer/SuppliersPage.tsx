@@ -89,8 +89,8 @@ export function SuppliersPage() {
       </p>
 
       <div className="mt-4 flex gap-5">
-        <aside className="hidden w-[260px] shrink-0 lg:block">
-          <div className="card p-4">
+        <aside className="sticky-below-header hidden h-fit w-[260px] shrink-0 lg:block">
+          <div className="card scroll-thin sticky-below-header-scroll p-4">
             <p className="text-sm font-bold text-ink-900">Фильтры</p>
 
             <div className="mt-3 space-y-3">

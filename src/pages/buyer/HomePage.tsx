@@ -240,6 +240,7 @@ export function HomePage() {
             title="Часто заказываете"
             description="Позиции из ваших последних заявок — можно добрать в один клик"
             products={shelves.frequent}
+            columns={5}
             action={
               <Link to="/favorites" className="text-[13px] font-medium text-brand-600 hover:underline">
                 Шаблоны закупок
@@ -250,9 +251,10 @@ export function HomePage() {
             title="Распродажа"
             description="Цены с уценкой от поставщиков на этой неделе"
             products={shelves.sale}
+            columns={5}
           />
-          <ProductShelf title="Новинки" products={shelves.novelty} />
-          <ProductShelf title="Хиты ресторанных закупок" products={shelves.hits} />
+          <ProductShelf title="Новинки" products={shelves.novelty} columns={5} />
+          <ProductShelf title="Хиты ресторанных закупок" products={shelves.hits} columns={5} />
         </>
       )}
 

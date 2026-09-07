@@ -56,7 +56,7 @@ export function activeFilterCount(filters: FilterState): number {
 function Group({
   title,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   title: string;
   children: React.ReactNode;
@@ -255,7 +255,7 @@ export function FiltersSidebar({
           />
         </Group>
 
-        <Group title="Бренд" defaultOpen={false}>
+        <Group title="Бренд">
           <Facet
             options={brandOptions}
             selected={filters.brands}
@@ -263,7 +263,7 @@ export function FiltersSidebar({
           />
         </Group>
 
-        <Group title="Страна" defaultOpen={false}>
+        <Group title="Страна">
           <Facet
             options={countryOptions}
             selected={filters.countries}

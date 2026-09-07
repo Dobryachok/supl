@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ClipboardList, Download, Plus, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
+import { DateRangeFilter, type DateRange } from '@/components/ui/DateRangeFilter';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input, Select } from '@/components/ui/Field';
 import { RowsSkeleton } from '@/components/ui/Skeleton';
@@ -24,8 +25,6 @@ import {
 } from '@/store/selectors';
 import type { OrderStatus } from '@/types';
 
-type Period = 'all' | '7' | '30' | '90';
-
 export function OrdersPage() {
   const state = useAppState();
   const toast = useToast();
@@ -41,14 +40,22 @@ export function OrdersPage() {
   );
   const [query, setQuery] = useState('');
   const [supplierId, setSupplierId] = useState('');
-  const [period, setPeriod] = useState<Period>('all');
+  const [period, setPeriod] = useState<DateRange>({ from: '', to: '' });
 
   const kpi = ordersKpi(state);
   const counts = statusCounts(state.orders);
 
+  const orderSuppliers = useMemo(() => {
+    const supplierIds = new Set(
+      state.orders.filter((order) => order.status !== 'draft').map((order) => order.supplierId),
+    );
+    return state.suppliers
+      .filter((supplier) => supplierIds.has(supplier.id))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  }, [state.orders, state.suppliers]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const now = Date.now();
     return state.orders
       .filter((order) => {
         if (tab === 'active' && !activeStatuses.includes(order.status)) return false;
@@ -59,9 +66,10 @@ export function OrdersPage() {
         if (kpiFilter === 'today' && order.deliveryDate !== new Date().toISOString().slice(0, 10))
           return false;
         if (kpiFilter === 'inWork' && !activeStatuses.includes(order.status)) return false;
-        if (period !== 'all') {
-          const days = Number(period);
-          if (now - new Date(order.createdAt).getTime() > days * 86_400_000) return false;
+        if (period.from || period.to) {
+          const orderDate = order.createdAt.slice(0, 10);
+          if (period.from && orderDate < period.from) return false;
+          if (period.to && orderDate > period.to) return false;
         }
         if (q) {
           const haystack = `${order.number} ${order.supplierName} ${order.lines
@@ -100,7 +108,7 @@ export function OrdersPage() {
     setKpiFilter(undefined);
     setQuery('');
     setSupplierId('');
-    setPeriod('all');
+    setPeriod({ from: '', to: '' });
     setSearchParams({});
   };
 
@@ -154,11 +162,12 @@ export function OrdersPage() {
         />
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-5 flex items-center gap-3">
         <Tabs
           value={tab}
           onChange={setTab}
           variant="pills"
+          className="min-w-0 flex-1"
           items={[
             {
               id: 'active',
@@ -174,28 +183,19 @@ export function OrdersPage() {
             { id: 'acts', label: 'Акты расхождений', count: state.acts.length },
           ]}
         />
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <DateRangeFilter value={period} onChange={setPeriod} className="shrink-0" />
           <Select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
-            className="h-9 w-52 text-[13px]"
+            className="h-9 w-44 shrink-0 text-[13px] sm:w-52"
           >
             <option value="">Все поставщики</option>
-            {state.suppliers.map((supplier) => (
+            {orderSuppliers.map((supplier) => (
               <option key={supplier.id} value={supplier.id}>
                 {supplier.name}
               </option>
             ))}
-          </Select>
-          <Select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as Period)}
-            className="h-9 w-40 text-[13px]"
-          >
-            <option value="all">Весь период</option>
-            <option value="7">За 7 дней</option>
-            <option value="30">За 30 дней</option>
-            <option value="90">За 90 дней</option>
           </Select>
         </div>
       </div>
@@ -277,7 +277,7 @@ export function OrdersPage() {
             <span className="text-[13px] text-ink-500">
               {withCount(filtered.length, 'в выборке', 'в выборке', 'в выборке')}
             </span>
-            {(status !== 'all' || kpiFilter || supplierId || period !== 'all' || query) && (
+            {(status !== 'all' || kpiFilter || supplierId || period.from || period.to || query) && (
               <Button variant="ghost" size="sm" className="ml-auto" onClick={resetFilters}>
                 Сбросить фильтры
               </Button>

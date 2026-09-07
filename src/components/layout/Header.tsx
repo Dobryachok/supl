@@ -4,10 +4,8 @@ import {
   ClipboardList,
   Heart,
   LayoutGrid,
-  MapPin,
   Menu,
   MessageSquare,
-  Phone,
   ShoppingCart,
   Truck,
   User,
@@ -17,15 +15,12 @@ import { categories } from '@/data/categories';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { cn } from '@/lib/cn';
 import { moneyShort } from '@/lib/format';
-import { useAppState, useDispatch } from '@/store/AppContext';
+import { useAppState } from '@/store/AppContext';
 import { cartCount, cartTotal, ordersKpi, unreadThreads } from '@/store/selectors';
 import { CategoryIcon } from './CategoryIcon';
 import { MegaMenu } from './MegaMenu';
 import { NotificationsMenu } from './NotificationsMenu';
-import { RoleSwitcher } from './RoleSwitcher';
 import { SearchBox } from './SearchBox';
-
-const cities = ['Красноярск', 'Санкт-Петербург', 'Краснодар', 'Казань', 'Екатеринбург'];
 
 export function Logo({ compact }: { compact?: boolean }) {
   return (
@@ -49,10 +44,8 @@ export function Header() {
   const state = useAppState();
   const location = useLocation();
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const [cityOpen, setCityOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const catalogRef = useClickOutside<HTMLDivElement>(catalogOpen, () => setCatalogOpen(false));
-  const cityRef = useClickOutside<HTMLDivElement>(cityOpen, () => setCityOpen(false));
 
   const kpi = ordersKpi(state);
   const items = cartCount(state);
@@ -70,44 +63,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
-      <div className="hidden border-b border-ink-100 bg-ink-50 lg:block">
-        <div className="page flex h-9 items-center gap-5 text-[12px] text-ink-500">
-          <RoleSwitcher />
-          <div ref={cityRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setCityOpen((v) => !v)}
-              className="flex cursor-pointer items-center gap-1 hover:text-ink-800"
-            >
-              <MapPin className="size-3.5" />
-              {state.session.city}
-            </button>
-            {cityOpen && (
-              <div className="animate-fade-in absolute top-full left-0 z-40 mt-1 w-48 rounded-lg border border-ink-200 bg-white p-1 shadow-[var(--shadow-pop)]">
-                {cities.map((city) => (
-                  <CityOption key={city} city={city} onDone={() => setCityOpen(false)} />
-                ))}
-              </div>
-            )}
-          </div>
-          <a href="tel:+78005504183" className="flex items-center gap-1 hover:text-ink-800">
-            <Phone className="size-3.5" />
-            +7 (800) 550-41-83
-          </a>
-          <nav className="ml-auto flex items-center gap-5">
-            <Link to="/suppliers" className="hover:text-ink-800">
-              Поставщикам
-            </Link>
-            <Link to="/orders" className="hover:text-ink-800">
-              Заказчикам
-            </Link>
-            <Link to="/profile" className="hover:text-ink-800">
-              Условия доставки
-            </Link>
-          </nav>
-        </div>
-      </div>
-
       <div className="page flex h-16 items-center gap-3">
         <button
           type="button"
@@ -212,26 +167,6 @@ export function Header() {
   );
 }
 
-function CityOption({ city, onDone }: { city: string; onDone: () => void }) {
-  const state = useAppState();
-  const dispatch = useDispatch();
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        dispatch({ type: 'session/setCity', city });
-        onDone();
-      }}
-      className={cn(
-        'block w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left text-[13px] hover:bg-ink-50',
-        state.session.city === city ? 'font-semibold text-brand-700' : 'text-ink-700',
-      )}
-    >
-      {city}
-    </button>
-  );
-}
-
 function HeaderAction({
   to,
   icon,
@@ -288,7 +223,6 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="scroll-thin flex-1 overflow-y-auto p-4">
-          <RoleSwitcher className="mb-4" />
           <p className="mb-1.5 text-[11px] font-semibold tracking-wide text-ink-400 uppercase">
             Категории
           </p>

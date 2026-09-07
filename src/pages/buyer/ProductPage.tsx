@@ -381,7 +381,7 @@ export function ProductPage() {
           )}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="lg:sticky-below-header">
           <div className="card p-4">
             <div className="flex items-center gap-3">
               <SupplierLogo name={supplier.name} hue={supplier.hue} className="size-12" />

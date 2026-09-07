@@ -110,6 +110,25 @@
     padding-inline: 16px;
   }
 
+  .sticky-below-header {
+    position: sticky;
+    align-self: flex-start;
+    top: var(--header-offset, 6rem);
+  }
+
+  .sticky-below-header-scroll {
+    max-height: calc(100vh - var(--header-offset, 6rem) - 1rem);
+    overflow-y: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .lg\:sticky-below-header {
+      position: sticky;
+      align-self: flex-start;
+      top: var(--header-offset, 6rem);
+    }
+  }
+
   .card {
     background: #fff;
     border: 1px solid var(--color-ink-200);

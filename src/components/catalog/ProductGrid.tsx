@@ -28,7 +28,7 @@ export function ProductGrid({
       className={cn(
         'grid grid-cols-2 gap-3 sm:grid-cols-3',
         columns === 4 && 'xl:grid-cols-4',
-        columns === 5 && 'lg:grid-cols-4 2xl:grid-cols-5',
+        columns === 5 && 'xl:grid-cols-5',
         className,
       )}
     >
@@ -44,11 +44,13 @@ export function ProductShelf({
   description,
   products,
   action,
+  columns = 4,
 }: {
   title: string;
   description?: string;
   products: Product[];
   action?: React.ReactNode;
+  columns?: 3 | 4 | 5;
 }) {
   if (!products.length) return null;
   return (
@@ -60,13 +62,7 @@ export function ProductShelf({
         </div>
         {action}
       </div>
-      <div className="scroll-thin -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 2xl:grid-cols-5">
-        {products.map((product) => (
-          <div key={product.id} className="flex h-full w-[220px] shrink-0 lg:w-auto">
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
+      <ProductGrid products={products} columns={columns} />
     </section>
   );
 }

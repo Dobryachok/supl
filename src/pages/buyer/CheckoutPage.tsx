@@ -338,7 +338,7 @@ export function CheckoutPage() {
           })}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside className="lg:sticky-below-header">
           <div className="card p-4">
             <h2 className="text-[15px]">Итого</h2>
             <dl className="mt-3 space-y-2 text-[13px]">

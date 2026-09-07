@@ -44,7 +44,7 @@ export function SellerLayout() {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-ink-50">
+    <div className="min-h-screen bg-ink-50 [--header-offset:calc(4rem+0.75rem)]">
       <header className="sticky top-0 z-40 border-b border-ink-200 bg-white">
         <div className="page flex h-16 items-center gap-4">
           <Logo />
@@ -67,14 +67,13 @@ export function SellerLayout() {
               ))}
             </Select>
             <NotificationsMenu />
-            <RoleSwitcher />
           </div>
         </div>
       </header>
 
       <div className="page flex gap-6 py-6">
         <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="card sticky top-24 p-3">
+          <div className="card sticky-below-header p-3">
             {supplier && (
               <div className="mb-3 flex items-center gap-3 rounded-lg bg-ink-50 p-3">
                 <SupplierLogo name={supplier.name} hue={supplier.hue} className="size-10" />
@@ -136,6 +135,12 @@ export function SellerLayout() {
             ))}
           </div>
           <Outlet />
+        </div>
+      </div>
+
+      <div className="border-t border-ink-200 bg-ink-50 py-4">
+        <div className="page flex justify-center">
+          <RoleSwitcher />
         </div>
       </div>
     </div>

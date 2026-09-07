@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { categories } from '@/data/categories';
+import { RoleSwitcher } from './RoleSwitcher';
 
 const columns = [
   {
@@ -91,6 +92,11 @@ export function Footer() {
         <div className="page flex flex-col gap-2 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} SUPL. Демонстрационный проект интерфейса.</p>
           <p>Данные хранятся локально в браузере — можно смело нажимать любые кнопки.</p>
+        </div>
+      </div>
+      <div className="border-t border-ink-100 bg-ink-50 py-4">
+        <div className="page flex justify-center">
+          <RoleSwitcher />
         </div>
       </div>
     </footer>
