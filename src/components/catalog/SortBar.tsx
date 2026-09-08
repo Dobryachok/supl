@@ -1,6 +1,6 @@
 import { LayoutGrid, List, Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Field';
+import { Input, Select, toolbarInputShellClass, toolbarSelectClass } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
 import type { CatalogSort } from '@/store/selectors';
 import { catalogGridClass } from './ProductGrid';
@@ -48,7 +48,7 @@ export function SortBar<T extends string = CatalogSort>({
   const searchSpan =
     columns === 5 ? 'col-span-2 sm:col-span-2 xl:col-span-4' : 'col-span-2 sm:col-span-2 xl:col-span-3';
   const controlsSpan = 'col-span-2 sm:col-span-1 xl:col-span-1';
-  const controlHeight = 'h-9';
+  const controlHeight = 'h-10';
 
   return (
     <div className={cn(catalogGridClass(columns), 'items-center', className)}>
@@ -56,9 +56,9 @@ export function SortBar<T extends string = CatalogSort>({
         {onOpenFilters && (
           <Button
             variant="secondary"
-            size="sm"
+            size="md"
             className="shrink-0 lg:hidden"
-            icon={<SlidersHorizontal className="size-3.5" />}
+            icon={<SlidersHorizontal className="size-4" />}
             onClick={onOpenFilters}
           >
             Фильтры{filterCount ? ` (${filterCount})` : ''}
@@ -69,7 +69,7 @@ export function SortBar<T extends string = CatalogSort>({
           placeholder={searchPlaceholder}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className={cn(controlHeight, '!h-9 min-w-0 flex-1 px-2.5 py-0 [&_input]:h-full')}
+          className={toolbarInputShellClass}
           aria-label="Поиск"
         />
       </div>
@@ -78,7 +78,7 @@ export function SortBar<T extends string = CatalogSort>({
         <Select
           value={sort}
           onChange={(e) => onSortChange(e.target.value as T)}
-          className={cn(controlHeight, '!h-9 min-w-0 flex-1 text-[13px]')}
+          className={toolbarSelectClass}
           aria-label="Сортировка"
         >
           {sortOptions.map((option) => (
@@ -93,7 +93,7 @@ export function SortBar<T extends string = CatalogSort>({
               type="button"
               onClick={() => onViewChange('grid')}
               className={cn(
-                'flex h-full w-9 cursor-pointer items-center justify-center',
+                'flex h-full w-10 cursor-pointer items-center justify-center',
                 view === 'grid' ? 'bg-brand-50 text-brand-700' : 'text-ink-500 hover:bg-ink-50',
               )}
               aria-label="Сетка"
@@ -104,7 +104,7 @@ export function SortBar<T extends string = CatalogSort>({
               type="button"
               onClick={() => onViewChange('list')}
               className={cn(
-                'flex h-full w-9 cursor-pointer items-center justify-center border-l border-ink-200',
+                'flex h-full w-10 cursor-pointer items-center justify-center border-l border-ink-200',
                 view === 'list' ? 'bg-brand-50 text-brand-700' : 'text-ink-500 hover:bg-ink-50',
               )}
               aria-label="Список"

@@ -2,17 +2,15 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   BadgeCheck,
-  Building2,
   ChevronRight,
   Clock,
   Heart,
-  Mail,
   MapPin,
   MessageSquare,
-  Phone,
   Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/orders/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Field, Textarea } from '@/components/ui/Field';
@@ -31,7 +29,6 @@ import { uid } from '@/lib/ids';
 import {
   dateFull,
   money,
-  orderStatusLabels,
   paymentLabels,
   relativeDay,
   withCount,
@@ -224,6 +221,7 @@ export function SupplierPage() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               searchPlaceholder="Поиск в каталоге поставщика"
+              columns={5}
               className="mb-3"
             />
             {products.length === 0 ? (
@@ -232,7 +230,7 @@ export function SupplierPage() {
                 compact
               />
             ) : (
-              <ProductGrid products={products} view={view} />
+              <ProductGrid products={products} view={view} columns={5} />
             )}
           </>
         )}
@@ -299,28 +297,41 @@ export function SupplierPage() {
             </div>
             <div className="card p-4">
               <h2 className="text-[15px]">Контакты</h2>
-              <ul className="mt-2 space-y-2 text-[13px]">
-                <li className="flex items-center gap-2 text-ink-700">
-                  <Building2 className="size-4 text-ink-400" />
-                  Менеджер: {supplier.contacts.manager}
-                </li>
-                <li className="flex items-center gap-2 text-ink-700">
-                  <Phone className="size-4 text-ink-400" />
-                  <a href={`tel:${supplier.contacts.phone}`} className="hover:text-brand-600">
-                    {supplier.contacts.phone}
-                  </a>
-                </li>
-                <li className="flex items-center gap-2 text-ink-700">
-                  <Mail className="size-4 text-ink-400" />
-                  <a href={`mailto:${supplier.contacts.email}`} className="hover:text-brand-600">
-                    {supplier.contacts.email}
-                  </a>
-                </li>
-                <li className="flex items-center gap-2 text-ink-700">
-                  <MapPin className="size-4 text-ink-400" />
-                  {supplier.contacts.site}
-                </li>
-              </ul>
+              <dl className="mt-2 divide-y divide-ink-100 text-[13px]">
+                {[
+                  { key: 'manager', label: 'Менеджер', value: supplier.contacts.manager },
+                  {
+                    key: 'phone',
+                    label: 'Телефон',
+                    value: (
+                      <a
+                        href={`tel:${supplier.contacts.phone}`}
+                        className="font-medium text-ink-800 hover:text-brand-600"
+                      >
+                        {supplier.contacts.phone}
+                      </a>
+                    ),
+                  },
+                  {
+                    key: 'email',
+                    label: 'Email',
+                    value: (
+                      <a
+                        href={`mailto:${supplier.contacts.email}`}
+                        className="font-medium text-ink-800 hover:text-brand-600"
+                      >
+                        {supplier.contacts.email}
+                      </a>
+                    ),
+                  },
+                  { key: 'site', label: 'Сайт', value: supplier.contacts.site },
+                ].map((row) => (
+                  <div key={row.key} className="flex justify-between gap-4 py-2">
+                    <dt className="text-ink-500">{row.label}</dt>
+                    <dd className="text-right font-medium text-ink-800">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           </div>
         )}
@@ -371,7 +382,7 @@ export function SupplierPage() {
                       от {dateFull(order.createdAt)} · {order.lines.length} позиций
                     </p>
                   </div>
-                  <Badge tone="neutral">{orderStatusLabels[order.status]}</Badge>
+                  <StatusBadge status={order.status} size="sm" />
                   <span className="text-sm font-semibold text-ink-900">
                     {money(order.lines.reduce((s, l) => s + l.price * l.qty, 0))}
                   </span>

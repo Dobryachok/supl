@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Copy, FileSpreadsheet, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
-import { Checkbox, Input, Select, Switch } from '@/components/ui/Field';
+import { Checkbox, Input, Select, Switch, toolbarInputShellClass } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -104,7 +104,7 @@ export function SellerProductsPage() {
           }}
           placeholder="Название, артикул, бренд"
           leading={<Search className="size-4" />}
-          className="w-full sm:w-72"
+          className={cn(toolbarInputShellClass, 'w-full sm:w-72')}
         />
         <Select
           value={categoryId}

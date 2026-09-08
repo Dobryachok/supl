@@ -39,14 +39,15 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
     <article
       className={cn(
         'card transition-shadow hover:shadow-hover',
-        compact ? 'p-3' : 'p-4',
+        compact ? 'p-5' : 'p-4',
         overdue && 'border-danger-100',
         order.status === 'delivered' && 'border-warn-100',
       )}
     >
       {compact ? (
-        <div className="space-y-3">
-          <div className="flex gap-3">
+        <div>
+          <div className="space-y-4">
+            <div className="flex gap-3">
             <div className="flex min-w-0 flex-1 items-end gap-3">
               {supplier && (
                 <SupplierLogo
@@ -89,17 +90,27 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
 
           <div className="flex items-end justify-between gap-3">
             <dl className="min-w-0 space-y-1 text-[12px] text-ink-600">
-              <div className="flex items-start gap-1.5">
-                <MapPin className="mt-0.5 size-3.5 shrink-0 text-ink-400" />
-                <span className="min-w-0">
-                  {outlet?.name}
-                  <span className="block text-[11px] text-ink-500">{order.deliveryAddress}</span>
-                </span>
+              <div className="flex min-w-0 items-center gap-1">
+                <MapPin className="size-3 shrink-0 text-ink-400" />
+                <p className="min-w-0 truncate">
+                  <span>{outlet?.name}</span>
+                  <span className="text-[11px] text-ink-500"> · {order.deliveryAddress}</span>
+                </p>
               </div>
               {supplier && (
-                <div className="flex items-center gap-1.5">
-                  <Phone className="size-3.5 shrink-0 text-ink-400" />
-                  <span>{supplier.contacts.phone}</span>
+                <div className="flex min-w-0 items-center gap-1">
+                  <Phone className="size-3 shrink-0 text-ink-400" />
+                  <p className="min-w-0 truncate">
+                    <a
+                      href={`tel:${supplier.contacts.phone.replace(/\s|\(|\)|-/g, '')}`}
+                      className="hover:text-brand-600"
+                    >
+                      {supplier.contacts.phone}
+                    </a>
+                    {supplier.contacts.manager && (
+                      <span className="text-[11px] text-ink-500"> · {supplier.contacts.manager}</span>
+                    )}
+                  </p>
                 </div>
               )}
             </dl>
@@ -135,8 +146,9 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
               </Button>
             </div>
           </div>
+          </div>
 
-          <DeliveryTrackerMini order={order} />
+          <DeliveryTrackerMini order={order} className="mt-5" />
         </div>
       ) : (
         <>

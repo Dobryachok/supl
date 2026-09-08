@@ -156,24 +156,21 @@ export function activeDeliveries(state: AppState, limit?: number): Order[] {
 export const deliveryClosedStatuses: OrderStatus[] = ['accepted', 'partially_accepted', 'refused'];
 
 export type DeliveryCalendarStatusFilter =
-  | 'all'
   | 'overdue'
   | 'acceptance'
   | 'closed'
   | 'in_transit';
 
 export interface DeliveryCalendarFilters {
-  status: DeliveryCalendarStatusFilter;
-  supplierId: string;
-  outletId: string;
-  includeClosed: boolean;
+  statuses: DeliveryCalendarStatusFilter[];
+  supplierIds: string[];
+  outletIds: string[];
 }
 
 export const emptyDeliveryCalendarFilters: DeliveryCalendarFilters = {
-  status: 'all',
-  supplierId: '',
-  outletId: '',
-  includeClosed: false,
+  statuses: [],
+  supplierIds: [],
+  outletIds: [],
 };
 
 export function calendarBaseOrders(state: AppState, includeClosed: boolean): Order[] {
@@ -184,25 +181,31 @@ export function calendarBaseOrders(state: AppState, includeClosed: boolean): Ord
   return state.orders.filter((o) => allowed.has(o.status));
 }
 
-export function filterDeliveries(state: AppState, filters: DeliveryCalendarFilters): Order[] {
-  const includeClosed = filters.includeClosed || filters.status === 'closed';
-  return calendarBaseOrders(state, includeClosed).filter((order) => {
-    if (filters.supplierId && order.supplierId !== filters.supplierId) return false;
-    if (filters.outletId && order.outletId !== filters.outletId) return false;
+function matchesDeliveryStatusFilter(
+  order: Order,
+  status: DeliveryCalendarStatusFilter,
+): boolean {
+  switch (status) {
+    case 'overdue':
+      return isOverdue(order);
+    case 'acceptance':
+      return order.status === 'delivered';
+    case 'closed':
+      return deliveryClosedStatuses.includes(order.status);
+    case 'in_transit':
+      return order.status === 'shipped';
+    default:
+      return true;
+  }
+}
 
-    switch (filters.status) {
-      case 'overdue':
-        return isOverdue(order);
-      case 'acceptance':
-        return order.status === 'delivered';
-      case 'closed':
-        return deliveryClosedStatuses.includes(order.status);
-      case 'in_transit':
-        return order.status === 'shipped';
-      case 'all':
-      default:
-        return true;
-    }
+export function filterDeliveries(state: AppState, filters: DeliveryCalendarFilters): Order[] {
+  const includeClosed = filters.statuses.includes('closed');
+  return calendarBaseOrders(state, includeClosed).filter((order) => {
+    if (filters.supplierIds.length && !filters.supplierIds.includes(order.supplierId)) return false;
+    if (filters.outletIds.length && !filters.outletIds.includes(order.outletId)) return false;
+    if (filters.statuses.length === 0) return true;
+    return filters.statuses.some((status) => matchesDeliveryStatusFilter(order, status));
   });
 }
 

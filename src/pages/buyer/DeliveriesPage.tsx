@@ -6,7 +6,9 @@ import {
   CalendarDays,
   LayoutList,
   PackageCheck,
+  Search,
   Truck,
+  X,
 } from 'lucide-react';
 import { DeliveryCalendar } from '@/components/deliveries/DeliveryCalendar';
 import {
@@ -16,6 +18,7 @@ import { DeliveryDayPanel } from '@/components/deliveries/DeliveryDayPanel';
 import { Badge } from '@/components/ui/Badge';
 import { LinkButton } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Field';
 import { DeliveryCard } from '@/components/orders/DeliveryCard';
 import { Tabs } from '@/components/ui/Tabs';
 import { cn } from '@/lib/cn';
@@ -33,7 +36,6 @@ import { useAppState } from '@/store/AppContext';
 import {
   type DeliveryCalendarFilters as CalendarFilters,
   deliveriesByDate,
-  deliveryClosedStatuses,
   emptyDeliveryCalendarFilters,
   filterDeliveries,
   isOverdue,
@@ -42,10 +44,35 @@ import {
 } from '@/store/selectors';
 import type { Order } from '@/types';
 
-type ListFilter = 'upcoming' | 'today' | 'week' | 'acceptance' | 'closed';
 type PageView = 'calendar' | 'list';
 
 const closedStatuses: Order['status'][] = ['accepted', 'partially_accepted', 'refused'];
+
+function addDaysToIso(iso: string, days: number): string {
+  const date = new Date(`${iso}T12:00:00`);
+  date.setDate(date.getDate() + days);
+  return isoDate(date);
+}
+
+function filterOrdersBySearch(orders: Order[], query: string): Order[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return orders;
+  return orders.filter((order) =>
+    `${order.number} ${order.supplierName} ${order.deliveryAddress}`.toLowerCase().includes(q),
+  );
+}
+
+function applyPeriodFilter(orders: Order[], from: string, to: string): Order[] {
+  if (!from && !to) return orders;
+  let start = from;
+  let end = to;
+  if (start && end && start > end) [start, end] = [end, start];
+  return orders.filter((order) => {
+    if (start && order.deliveryDate < start) return false;
+    if (end && order.deliveryDate > end) return false;
+    return true;
+  });
+}
 
 export function DeliveriesPage() {
   const state = useAppState();
@@ -53,22 +80,33 @@ export function DeliveriesPage() {
 
   const today = isoDate(startOfToday());
   const view: PageView = searchParams.get('view') === 'list' ? 'list' : 'calendar';
-  const selectedDate = searchParams.get('date') ?? today;
+  const selectedDate = searchParams.get('date');
 
-  const [visibleMonth, setVisibleMonth] = useState(`${selectedDate.slice(0, 7)}-01`);
-  const [listFilter, setListFilter] = useState<ListFilter>('upcoming');
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => `${(selectedDate ?? today).slice(0, 7)}-01`,
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [periodFrom, setPeriodFrom] = useState('');
+  const [periodTo, setPeriodTo] = useState('');
   const [calendarFilters, setCalendarFilters] = useState<CalendarFilters>(emptyDeliveryCalendarFilters);
+
+  const updateCalendarFilters = (filters: CalendarFilters) => {
+    setCalendarFilters(filters);
+    setPeriodFrom('');
+    setPeriodTo('');
+  };
 
   const setView = (next: PageView) => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set('view', next);
-      if (!params.get('date')) params.set('date', today);
       return params;
     });
   };
 
   const setSelectedDate = (iso: string) => {
+    setPeriodFrom('');
+    setPeriodTo('');
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set('date', iso);
@@ -76,6 +114,17 @@ export function DeliveriesPage() {
       return params;
     });
     setVisibleMonth(`${iso.slice(0, 7)}-01`);
+  };
+
+  const clearCalendarSelection = () => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete('date');
+      params.set('view', 'calendar');
+      return params;
+    });
+    setPeriodFrom('');
+    setPeriodTo('');
   };
 
   const tracked = useMemo(
@@ -86,21 +135,49 @@ export function DeliveriesPage() {
     [state.orders],
   );
 
-  const filteredCalendarOrders = useMemo(
-    () => filterDeliveries(state, calendarFilters),
-    [state, calendarFilters],
-  );
+  const filteredOrders = useMemo(() => {
+    let orders = filterDeliveries(state, calendarFilters);
+    orders = applyPeriodFilter(orders, periodFrom, periodTo);
+    return filterOrdersBySearch(orders, searchQuery);
+  }, [state, calendarFilters, periodFrom, periodTo, searchQuery]);
 
   const calendarByDate = useMemo(
-    () => deliveriesByDate(filteredCalendarOrders),
-    [filteredCalendarOrders],
+    () => deliveriesByDate(filteredOrders),
+    [filteredOrders],
   );
 
-  const dayOrders = calendarByDate.get(selectedDate) ?? [];
+  const dayOrders = selectedDate ? (calendarByDate.get(selectedDate) ?? []) : [];
+
+  const hasPeriodRange = Boolean(periodFrom && periodTo);
+  const panelMode = hasPeriodRange ? 'period' : selectedDate ? 'day' : 'all';
+
+  const panelGroups = useMemo(() => {
+    if (hasPeriodRange) {
+      const [start, end] =
+        periodFrom! <= periodTo! ? [periodFrom!, periodTo!] : [periodTo!, periodFrom!];
+      const groups: { date: string; orders: Order[] }[] = [];
+      const cursor = new Date(start);
+      const endDate = new Date(end);
+      while (cursor <= endDate) {
+        const iso = isoDate(cursor);
+        const orders = calendarByDate.get(iso) ?? [];
+        if (orders.length > 0) groups.push({ date: iso, orders });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return groups;
+    }
+    if (selectedDate) {
+      return [{ date: selectedDate, orders: dayOrders }];
+    }
+    return Array.from(calendarByDate.entries())
+      .filter(([, orders]) => orders.length > 0)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, orders]) => ({ date, orders }));
+  }, [hasPeriodRange, periodFrom, periodTo, selectedDate, dayOrders, calendarByDate]);
 
   const calendarSuppliers = useMemo(() => {
     const ids = new Set(
-      filterDeliveries(state, { ...calendarFilters, supplierId: '', status: 'all' }).map(
+      filterDeliveries(state, { ...calendarFilters, supplierIds: [] }).map(
         (o) => o.supplierId,
       ),
     );
@@ -120,36 +197,15 @@ export function DeliveriesPage() {
     closed: state.orders.filter((o) => closedStatuses.includes(o.status)).length,
   };
 
-  const visibleList = useMemo(() => {
-    switch (listFilter) {
-      case 'today':
-        return tracked.filter((o) => o.deliveryDate === today);
-      case 'week':
-        return tracked.filter((o) => {
-          const diff = daysBetween(o.deliveryDate);
-          return diff >= 0 && diff <= 7;
-        });
-      case 'acceptance':
-        return tracked.filter((o) => o.status === 'delivered');
-      case 'closed':
-        return state.orders
-          .filter((o) => deliveryClosedStatuses.includes(o.status))
-          .sort((a, b) => b.deliveryDate.localeCompare(a.deliveryDate));
-      case 'upcoming':
-      default:
-        return tracked;
-    }
-  }, [listFilter, tracked, state.orders, today]);
-
   const listGroups = useMemo(() => {
     const map = new Map<string, Order[]>();
-    for (const order of visibleList) {
+    for (const order of filteredOrders) {
       const list = map.get(order.deliveryDate) ?? [];
       list.push(order);
       map.set(order.deliveryDate, list);
     }
     return Array.from(map.entries());
-  }, [visibleList]);
+  }, [filteredOrders]);
 
   const inTransit = tracked.filter((o) => o.status === 'shipped');
   const overdueList = tracked.filter(isOverdue);
@@ -160,20 +216,48 @@ export function DeliveriesPage() {
   const applyCalendarKpi = (kind: 'today' | 'acceptance' | 'overdue') => {
     setView('calendar');
     setSelectedDate(today);
+    setPeriodFrom('');
+    setPeriodTo('');
     if (kind === 'today') {
       setCalendarFilters(emptyDeliveryCalendarFilters);
       return;
     }
     if (kind === 'acceptance') {
-      setCalendarFilters({ ...emptyDeliveryCalendarFilters, status: 'acceptance' });
+      setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['acceptance'] });
       return;
     }
-    setCalendarFilters({ ...emptyDeliveryCalendarFilters, status: 'overdue' });
+    setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['overdue'] });
   };
 
-  const handleListKpi = (filter: ListFilter) => {
+  const handleListKpi = (kind: 'today' | 'week' | 'acceptance' | 'closed' | 'overdue' | 'in_transit') => {
     setView('list');
-    setListFilter(filter);
+    if (kind === 'today') {
+      setPeriodFrom(today);
+      setPeriodTo(today);
+    } else if (kind === 'week') {
+      setPeriodFrom(today);
+      setPeriodTo(addDaysToIso(today, 7));
+    } else {
+      setPeriodFrom('');
+      setPeriodTo('');
+    }
+    if (kind === 'acceptance') {
+      setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['acceptance'] });
+      return;
+    }
+    if (kind === 'closed') {
+      setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['closed'] });
+      return;
+    }
+    if (kind === 'overdue') {
+      setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['overdue'] });
+      return;
+    }
+    if (kind === 'in_transit') {
+      setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['in_transit'] });
+      return;
+    }
+    setCalendarFilters(emptyDeliveryCalendarFilters);
   };
 
   return (
@@ -213,11 +297,11 @@ export function DeliveriesPage() {
           tone="progress"
           onClick={() => {
             if (view === 'calendar') {
-              setView('calendar');
-              setCalendarFilters({ ...emptyDeliveryCalendarFilters, status: 'in_transit' });
+              setPeriodFrom('');
+              setPeriodTo('');
+              setCalendarFilters({ ...emptyDeliveryCalendarFilters, statuses: ['in_transit'] });
             } else {
-              setListFilter('upcoming');
-              setView('list');
+              handleListKpi('in_transit');
             }
           }}
         />
@@ -238,7 +322,7 @@ export function DeliveriesPage() {
           hint={overdueList.length ? 'свяжитесь с поставщиком' : 'срывов нет'}
           tone={overdueList.length ? 'danger' : 'neutral'}
           onClick={() =>
-            view === 'calendar' ? applyCalendarKpi('overdue') : handleListKpi('upcoming')
+            view === 'calendar' ? applyCalendarKpi('overdue') : handleListKpi('overdue')
           }
         />
       </div>
@@ -254,15 +338,15 @@ export function DeliveriesPage() {
         ]}
       />
 
-      {view === 'calendar' ? (
-        <div className="mt-4 space-y-4">
-          <DeliveryCalendarFilters
-            filters={calendarFilters}
-            suppliers={calendarSuppliers}
-            outlets={state.restaurant.outlets}
-            onChange={setCalendarFilters}
-          />
+      <div className="mt-4 space-y-4">
+        <DeliveryCalendarFilters
+          filters={calendarFilters}
+          suppliers={calendarSuppliers}
+          outlets={state.restaurant.outlets}
+          onChange={updateCalendarFilters}
+        />
 
+        {view === 'calendar' ? (
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <div className="w-full shrink-0 lg:w-[30rem] lg:max-w-[30rem]">
               <DeliveryCalendar
@@ -271,62 +355,125 @@ export function DeliveriesPage() {
                 ordersByDate={calendarByDate}
                 onSelectDate={setSelectedDate}
                 onMonthChange={setVisibleMonth}
+                periodFrom={periodFrom}
+                periodTo={periodTo}
+                onPeriodFromChange={setPeriodFrom}
+                onPeriodToChange={setPeriodTo}
+                onClearSelection={clearCalendarSelection}
               />
             </div>
-            <div className="min-w-0 flex-1 lg:min-w-[min(100%,24rem)]">
-              <DeliveryDayPanel date={selectedDate} orders={dayOrders} />
+            <div className="min-w-0 flex-1 space-y-3 lg:min-w-[min(100%,24rem)]">
+              <DeliveriesSearchInput value={searchQuery} onChange={setSearchQuery} />
+              <DeliveryDayPanel
+                mode={panelMode}
+                selectedDate={selectedDate ?? undefined}
+                periodFrom={periodFrom}
+                periodTo={periodTo}
+                groups={panelGroups}
+              />
             </div>
           </div>
-        </div>
-      ) : (
-        <>
-          <Tabs
-            className="mt-5"
-            variant="pills"
-            value={listFilter}
-            onChange={(next) => setListFilter(next as ListFilter)}
-            items={[
-              { id: 'upcoming', label: 'Все активные', count: counters.upcoming },
-              { id: 'today', label: 'Сегодня', count: counters.today },
-              { id: 'week', label: 'Неделя', count: counters.week },
-              { id: 'acceptance', label: 'Ждут приёмки', count: counters.acceptance },
-              { id: 'closed', label: 'Завершённые', count: counters.closed },
-            ]}
-          />
-
-          {listGroups.length === 0 ? (
-            <EmptyState
-              className="mt-4"
-              icon={<Truck className="size-6" />}
-              title="Поставок в этой выборке нет"
-              text="Оформите заявку в каталоге — она появится здесь с трекингом по этапам."
-              action={<LinkButton to="/catalog">Собрать заявку</LinkButton>}
-            />
-          ) : (
-            <div className="mt-4 space-y-5">
-              {listGroups.map(([date, orders]) => (
-                <section key={date}>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-[15px]">
-                      {dateFull(date)}, {weekday(date)}
-                    </h2>
-                    <Badge tone={date === today ? 'info' : 'neutral'}>{relativeDay(date)}</Badge>
-                    <span className="text-[13px] text-ink-500">
-                      {withCount(orders.length, 'поставка', 'поставки', 'поставок')}
-                    </span>
-                  </div>
-                  <div className="mt-2 space-y-2.5">
-                    {orders.map((order) => (
-                      <DeliveryCard key={order.id} order={order} />
-                    ))}
-                  </div>
-                </section>
-              ))}
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <Input
+                type="date"
+                leading={<span className="text-sm font-medium text-ink-500">С</span>}
+                value={periodFrom}
+                onChange={(e) => setPeriodFrom(e.target.value)}
+                className={cn(dateControlClass, 'min-w-[9.5rem] flex-1 px-2.5 sm:max-w-[11rem]')}
+                aria-label="Дата с"
+              />
+              <Input
+                type="date"
+                leading={<span className="text-sm font-medium text-ink-500">По</span>}
+                value={periodTo}
+                onChange={(e) => setPeriodTo(e.target.value)}
+                className={cn(dateControlClass, 'min-w-[9.5rem] flex-1 px-2.5 sm:max-w-[11rem]')}
+                aria-label="Дата по"
+              />
+              <DeliveriesSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                className="min-w-[12rem] flex-[2]"
+              />
             </div>
-          )}
-        </>
-      )}
+
+            {listGroups.length === 0 ? (
+              <EmptyState
+                icon={<Truck className="size-6" />}
+                title="Поставок в этой выборке нет"
+                text="Оформите заявку в каталоге — она появится здесь с трекингом по этапам."
+                action={<LinkButton to="/catalog">Собрать заявку</LinkButton>}
+              />
+            ) : (
+              <div className="space-y-5">
+                {listGroups.map(([date, orders]) => (
+                  <section key={date}>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-[15px]">
+                        {dateFull(date)}, {weekday(date)}
+                      </h2>
+                      <Badge tone={date === today ? 'info' : 'neutral'}>{relativeDay(date)}</Badge>
+                      <span className="text-[13px] text-ink-500">
+                        {withCount(orders.length, 'поставка', 'поставки', 'поставок')}
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-2.5">
+                      {orders.map((order) => (
+                        <DeliveryCard key={order.id} order={order} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+const dateControlClass = '!h-10 py-0 text-sm [&_input]:h-full';
+
+function DeliveriesSearchInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex h-10 min-w-0 items-center gap-2 rounded-lg border border-ink-300 bg-white px-3 transition-colors',
+        'focus-within:border-brand-500 focus-within:outline-2 focus-within:outline-brand-200',
+        className,
+      )}
+    >
+      <Search className="size-4 shrink-0 text-ink-400" />
+      <input
+        type="search"
+        placeholder="Поиск по заявке, поставщику, адресу"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-400"
+        aria-label="Поиск поставок"
+      />
+      {value && (
+        <button
+          type="button"
+          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-600"
+          aria-label="Очистить поиск"
+          onClick={() => onChange('')}
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+    </span>
   );
 }
 

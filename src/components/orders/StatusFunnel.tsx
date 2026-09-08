@@ -1,5 +1,6 @@
 import { CheckCircle2, FileEdit, PackageCheck, Send, Truck, XCircle } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { orderStatusStyles } from '@/lib/orderStatusStyles';
 import type { OrderStatus } from '@/types';
 
 const stages: { status: OrderStatus; label: string; icon: typeof Send }[] = [
@@ -55,7 +56,7 @@ export function StatusFunnel({
                 className={cn(
                   'flex size-8 shrink-0 items-center justify-center rounded-full',
                   counts[stage.status] > 0
-                    ? 'bg-brand-100 text-brand-700'
+                    ? orderStatusStyles[stage.status].iconDone
                     : 'bg-ink-100 text-ink-400',
                 )}
               >
@@ -86,7 +87,12 @@ export function StatusFunnel({
             value === 'accepted' ? 'bg-success-50' : 'hover:bg-ink-50',
           )}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success-50 text-success-600">
+          <span
+            className={cn(
+              'flex size-8 shrink-0 items-center justify-center rounded-full',
+              orderStatusStyles.accepted.iconDone,
+            )}
+          >
             <PackageCheck className="size-4" />
           </span>
           <span>

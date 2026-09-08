@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
 import { dateTime, orderStatusLabels } from '@/lib/format';
+import { orderStatusStyles, overdueOrderStyle } from '@/lib/orderStatusStyles';
 import type { Order, OrderStatus } from '@/types';
 import { statusIcons } from './StatusBadge';
 
@@ -49,6 +50,7 @@ export function OrderTimeline({ order }: { order: Order }) {
       {steps.map((step, index) => {
         const done = Boolean(step.at);
         const isCurrent = index === currentIndex;
+        const visual = orderStatusStyles[step.status];
         return (
           <li key={`${step.status}-${index}`} className="flex gap-3 pb-4 last:pb-0">
             <div className="relative flex flex-col items-center">
@@ -57,8 +59,8 @@ export function OrderTimeline({ order }: { order: Order }) {
                   'flex size-8 shrink-0 items-center justify-center rounded-full border-2',
                   done
                     ? isCurrent
-                      ? 'border-brand-600 bg-brand-600 text-white'
-                      : 'border-success-500 bg-success-50 text-success-600'
+                      ? visual.iconActive
+                      : visual.iconDone
                     : 'border-ink-200 bg-white text-ink-300',
                 )}
               >
@@ -68,7 +70,7 @@ export function OrderTimeline({ order }: { order: Order }) {
                 <span
                   className={cn(
                     'w-0.5 flex-1',
-                    done && steps[index + 1]?.at ? 'bg-success-500' : 'bg-ink-200',
+                    done && steps[index + 1]?.at ? visual.dot : 'bg-ink-200',
                   )}
                 />
               )}
@@ -114,13 +116,7 @@ export function OrderProgress({ order }: { order: Order }) {
       <div
         className={cn(
           'h-full rounded-full transition-all',
-          failed
-            ? 'bg-danger-500'
-            : order.status === 'partially_accepted'
-              ? 'bg-warn-500'
-              : order.status === 'accepted'
-                ? 'bg-success-500'
-                : 'bg-brand-500',
+          failed ? overdueOrderStyle.dot : orderStatusStyles[order.status].dot,
         )}
         style={{ width: `${percent}%` }}
       />

@@ -24,7 +24,6 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { DeliveryTracker } from '@/components/orders/DeliveryTracker';
-import { OrderTimeline } from '@/components/orders/OrderTimeline';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { useCartActions } from '@/hooks/useCartActions';
 import { useChatActions } from '@/hooks/useChatActions';
@@ -234,7 +233,6 @@ export function OrderPage() {
             onChange={setTab}
             items={[
               { id: 'composition', label: 'Состав', count: order.lines.length },
-              { id: 'timeline', label: 'Трекинг' },
               { id: 'chat', label: 'Чат', count: thread?.messages.length ?? 0 },
               { id: 'documents', label: 'Документы' },
             ]}
@@ -339,13 +337,6 @@ export function OrderPage() {
                     </div>
                   </dl>
                 </div>
-              </div>
-            )}
-
-            {tab === 'timeline' && (
-              <div className="card p-4">
-                <h2 className="mb-3 text-[15px]">Трекинг статусов</h2>
-                <OrderTimeline order={order} />
               </div>
             )}
 

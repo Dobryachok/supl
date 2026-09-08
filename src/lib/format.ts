@@ -117,6 +117,37 @@ export function isoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** dd.mm.yyyy из ISO-даты. */
+export function formatDateRu(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+/** Парсит dd.mm.yyyy или ISO; пустая строка — сброс, null — невалидно. */
+export function parseDateRu(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const dt = new Date(trimmed);
+    return isoDate(dt) === trimmed ? trimmed : null;
+  }
+
+  const match = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  let year = Number(match[3]);
+  if (match[3].length === 2) year += 2000;
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const dt = new Date(iso);
+  return isoDate(dt) === iso ? iso : null;
+}
+
 export function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);

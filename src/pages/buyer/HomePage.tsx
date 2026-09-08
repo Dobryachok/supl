@@ -4,10 +4,7 @@ import {
   ArrowRight,
   Heart,
   LayoutGrid,
-  PackageCheck,
-  Send,
   Store,
-  Timer,
   Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -317,43 +314,6 @@ export function HomePage() {
               </div>
             );
           })}
-        </div>
-      </section>
-
-      <section className="mt-10 rounded-xl bg-ink-800 p-6 text-white sm:p-8">
-        <h2 className="text-[21px] text-white">Как работает поставка в SUPL</h2>
-        <p className="mt-1 text-sm text-white/70">
-          Четыре шага от корзины до принятого на складе товара — с фиксацией расхождений.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              icon: Send,
-              title: '1. Заявка',
-              text: 'Корзина делится по поставщикам, вы выбираете дату и окно доставки.',
-            },
-            {
-              icon: Timer,
-              title: '2. Подтверждение',
-              text: 'Поставщик принимает заявку, корректирует состав и назначает машину.',
-            },
-            {
-              icon: Truck,
-              title: '3. Трекинг',
-              text: 'Статусы «в пути» и «доставлена» видны в разделе Поставки.',
-            },
-            {
-              icon: PackageCheck,
-              title: '4. Приёмка',
-              text: 'Кладовщик сверяет план и факт, недовоз уходит в акт расхождений.',
-            },
-          ].map((step) => (
-            <div key={step.title} className="rounded-lg bg-white/5 p-4">
-              <step.icon className="size-5 text-brand-200" />
-              <p className="mt-2.5 text-sm font-semibold text-white">{step.title}</p>
-              <p className="mt-1 text-[13px] text-white/70">{step.text}</p>
-            </div>
-          ))}
         </div>
       </section>
     </div>

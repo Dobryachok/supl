@@ -175,6 +175,12 @@ export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   label?: ReactNode;
 }
 
+/** Высота контролов в тулбарах каталога, фильтрах и поиске (кроме хэдера). */
+export const toolbarInputShellClass =
+  '!h-10 min-w-0 flex-1 px-3 py-0 text-sm [&_input]:h-full';
+
+export const toolbarSelectClass = '!h-10 min-w-0 flex-1 text-sm';
+
 export function Switch({ label, className, ...rest }: SwitchProps) {
   return (
     <label className={cn('flex cursor-pointer items-center gap-2.5 text-sm', className)}>

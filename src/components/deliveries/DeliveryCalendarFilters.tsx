@@ -1,20 +1,19 @@
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Select, Switch } from '@/components/ui/Field';
-import { Tabs } from '@/components/ui/Tabs';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { cn } from '@/lib/cn';
 import {
   type DeliveryCalendarFilters,
+  type DeliveryCalendarStatusFilter,
   emptyDeliveryCalendarFilters,
 } from '@/store/selectors';
 import type { Outlet, Supplier } from '@/types';
 
-const statusTabs = [
-  { id: 'all', label: 'Все' },
-  { id: 'in_transit', label: 'В пути' },
-  { id: 'acceptance', label: 'Ждут приёмки' },
-  { id: 'overdue', label: 'Просроченные' },
-  { id: 'closed', label: 'Завершённые' },
+const statusOptions: { value: DeliveryCalendarStatusFilter; label: string }[] = [
+  { value: 'in_transit', label: 'В пути' },
+  { value: 'acceptance', label: 'Ждут приёмки' },
+  { value: 'overdue', label: 'Просроченные' },
+  { value: 'closed', label: 'Завершённые' },
 ];
 
 export function DeliveryCalendarFilters({
@@ -35,64 +34,48 @@ export function DeliveryCalendarFilters({
   const reset = () => onChange(emptyDeliveryCalendarFilters);
 
   const hasActive =
-    filters.status !== 'all' ||
-    Boolean(filters.supplierId) ||
-    Boolean(filters.outletId) ||
-    filters.includeClosed;
+    filters.statuses.length > 0 ||
+    filters.supplierIds.length > 0 ||
+    filters.outletIds.length > 0;
 
   return (
-    <div className={cn('card space-y-3 p-4', className)}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13px] font-semibold text-ink-900">Фильтры</p>
-        {hasActive && (
-          <Button type="button" variant="ghost" size="sm" icon={<RotateCcw className="size-3.5" />} onClick={reset}>
-            Сбросить
-          </Button>
-        )}
-      </div>
-
-      <Tabs
-        variant="pills"
-        value={filters.status}
-        onChange={(id) => patch({ status: id as DeliveryCalendarFilters['status'] })}
-        items={statusTabs}
+    <div className={cn('flex flex-wrap items-center gap-3', className)}>
+      <MultiSelect
+        prefix="Статус"
+        placeholder="Все статусы"
+        options={statusOptions}
+        value={filters.statuses}
+        onChange={(statuses) => patch({ statuses: statuses as DeliveryCalendarStatusFilter[] })}
+        className="min-w-[10rem] flex-1"
       />
-
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-[10rem] flex-1">
-          <label className="mb-1 block text-[11px] font-medium text-ink-500">Поставщик</label>
-          <Select
-            value={filters.supplierId}
-            onChange={(e) => patch({ supplierId: e.target.value })}
-            className="h-9 text-[13px]"
-          >
-            <option value="">Все поставщики</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="min-w-[10rem] flex-1">
-          <label className="mb-1 block text-[11px] font-medium text-ink-500">Точка</label>
-          <Select
-            value={filters.outletId}
-            onChange={(e) => patch({ outletId: e.target.value })}
-            className="h-9 text-[13px]"
-          >
-            <option value="">Все точки</option>
-            {outlets.map((o) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </Select>
-        </div>
-
-        <Switch
-          checked={filters.includeClosed}
-          onChange={(e) => patch({ includeClosed: e.target.checked })}
-          label="Показать завершённые"
-        />
-      </div>
+      <MultiSelect
+        prefix="Поставщик"
+        placeholder="Все поставщики"
+        options={suppliers.map((supplier) => ({ value: supplier.id, label: supplier.name }))}
+        value={filters.supplierIds}
+        onChange={(supplierIds) => patch({ supplierIds })}
+        className="min-w-[10rem] flex-1"
+      />
+      <MultiSelect
+        prefix="Точка"
+        placeholder="Все точки"
+        options={outlets.map((outlet) => ({ value: outlet.id, label: outlet.name }))}
+        value={filters.outletIds}
+        onChange={(outletIds) => patch({ outletIds })}
+        className="min-w-[10rem] flex-1"
+      />
+      {hasActive && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
+          icon={<RotateCcw className="size-3.5" />}
+          onClick={reset}
+        >
+          Сбросить
+        </Button>
+      )}
     </div>
   );
 }

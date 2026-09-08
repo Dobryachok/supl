@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { DateRangeFilter, type DateRange } from '@/components/ui/DateRangeFilter';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Input, Select } from '@/components/ui/Field';
+import { Input, Select, toolbarInputShellClass } from '@/components/ui/Field';
 import { RowsSkeleton } from '@/components/ui/Skeleton';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
@@ -13,6 +13,7 @@ import { KpiBar } from '@/components/orders/KpiBar';
 import { OrdersTable } from '@/components/orders/OrdersTable';
 import { StatusFunnel } from '@/components/orders/StatusFunnel';
 import { useSimulatedLoad } from '@/hooks/useSimulatedLoad';
+import { cn } from '@/lib/cn';
 import { dateFull, money, verdictLabels, withCount } from '@/lib/format';
 import { useAppState } from '@/store/AppContext';
 import {
@@ -127,7 +128,7 @@ export function OrdersPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Номер, поставщик, продукт"
             leading={<Search className="size-4" />}
-            className="w-full sm:w-72"
+            className={cn(toolbarInputShellClass, 'w-full sm:w-72')}
           />
           <Button variant="secondary" icon={<Download className="size-4" />} onClick={exportCsv}>
             CSV

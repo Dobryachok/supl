@@ -19,7 +19,6 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { DeliveryTracker } from '@/components/orders/DeliveryTracker';
-import { OrderTimeline } from '@/components/orders/OrderTimeline';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { useChatActions } from '@/hooks/useChatActions';
 import {
@@ -218,7 +217,6 @@ export function SellerOrderPage() {
             }}
             items={[
               { id: 'composition', label: 'Состав', count: order.lines.length },
-              { id: 'timeline', label: 'История статусов' },
               { id: 'chat', label: 'Чат с рестораном', count: thread?.messages.length ?? 0 },
             ]}
           />
@@ -279,12 +277,6 @@ export function SellerOrderPage() {
                   </p>
                   <p className="text-[19px] font-bold text-ink-900">{money(totals.factTotal)}</p>
                 </div>
-              </div>
-            )}
-
-            {tab === 'timeline' && (
-              <div className="card p-4">
-                <OrderTimeline order={order} />
               </div>
             )}
 

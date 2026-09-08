@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Input, Select } from '@/components/ui/Field';
+import { Input, Select, toolbarInputShellClass } from '@/components/ui/Field';
 import { RowsSkeleton } from '@/components/ui/Skeleton';
 import { TD, TH, THead, TR, Table } from '@/components/ui/Table';
 import { Tabs } from '@/components/ui/Tabs';
@@ -77,7 +77,7 @@ export function SellerOrdersPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Номер заявки или товар"
           leading={<Search className="size-4" />}
-          className="w-full sm:w-72"
+          className={cn(toolbarInputShellClass, 'w-full sm:w-72')}
         />
       </div>
 
@@ -98,7 +98,7 @@ export function SellerOrdersPage() {
         <Select
           value={sort}
           onChange={(e) => setSort(e.target.value as 'created' | 'delivery')}
-          className="ml-auto h-9 w-52 text-[13px]"
+          className="ml-auto h-10 w-52 text-sm"
         >
           <option value="delivery">Сортировка: по дате доставки</option>
           <option value="created">Сортировка: по дате создания</option>

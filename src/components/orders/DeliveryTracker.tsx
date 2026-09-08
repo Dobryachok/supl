@@ -2,6 +2,7 @@ import { AlertTriangle, Ban, CheckCircle2, ClipboardCheck, PackageCheck, Send, T
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { dateTime, orderStatusLabels, relativeDay } from '@/lib/format';
+import { orderStatusStyles, overdueOrderStyle } from '@/lib/orderStatusStyles';
 import { isOverdue } from '@/store/selectors';
 import type { Order, OrderStatus } from '@/types';
 
@@ -105,19 +106,19 @@ export function DeliveryTracker({ order, className }: { order: Order; className?
           const current = index === reached - 1;
           const at = stageTime(order, stage.status);
           const partial = stage.status === 'accepted' && order.status === 'partially_accepted';
+          const visual =
+            partial ? orderStatusStyles.partially_accepted : orderStatusStyles[stage.status];
           return (
             <li key={stage.status} className="flex flex-1 gap-3 sm:block">
               <div className="flex flex-col items-center sm:flex-row">
                 <span
                   className={cn(
                     'flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                    partial
-                      ? 'border-warn-500 bg-warn-500 text-white'
-                      : current
-                        ? 'border-brand-600 bg-brand-600 text-white'
-                        : done
-                          ? 'border-success-500 bg-success-50 text-success-600'
-                          : 'border-ink-200 bg-white text-ink-300',
+                    partial || current
+                      ? visual.iconActive
+                      : done
+                        ? visual.iconDone
+                        : 'border-ink-200 bg-white text-ink-300',
                   )}
                 >
                   <stage.icon className="size-4" />
@@ -126,7 +127,7 @@ export function DeliveryTracker({ order, className }: { order: Order; className?
                   className={cn(
                     'w-0.5 flex-1 sm:h-0.5 sm:w-full',
                     index === stages.length - 1 && 'hidden',
-                    index < reached - 1 ? 'bg-success-500' : 'bg-ink-200',
+                    index < reached - 1 ? visual.dot : 'bg-ink-200',
                   )}
                 />
               </div>
@@ -163,6 +164,10 @@ export function DeliveryTrackerMini({ order, className }: { order: Order; classN
         {stages.map((stage, index) => {
           const done = index < reached;
           const current = index === reached - 1 && !broken;
+          const isPartialStage = stage.status === 'accepted' && partial;
+          const visual = isPartialStage
+            ? orderStatusStyles.partially_accepted
+            : orderStatusStyles[stage.status];
           const caption =
             stage.status === 'accepted' && partial
               ? 'Расхождения'
@@ -176,12 +181,10 @@ export function DeliveryTrackerMini({ order, className }: { order: Order; classN
                   'w-full truncate text-center text-[9px] leading-tight sm:text-[10px]',
                   done
                     ? broken
-                      ? 'font-medium text-danger-600'
-                      : partial && stage.status === 'accepted'
-                        ? 'font-medium text-warn-700'
-                        : 'font-medium text-ink-700'
+                      ? cn('font-medium', overdueOrderStyle.label)
+                      : cn('font-medium', visual.label)
                     : current
-                      ? 'font-medium text-brand-600'
+                      ? cn('font-medium', visual.label)
                       : 'text-ink-300',
                 )}
               >
@@ -192,15 +195,11 @@ export function DeliveryTrackerMini({ order, className }: { order: Order; classN
                   'h-1.5 w-full rounded-full',
                   broken
                     ? done
-                      ? 'bg-danger-500'
+                      ? overdueOrderStyle.dot
                       : 'bg-ink-100'
-                    : done
-                      ? partial && stage.status === 'accepted'
-                        ? 'bg-warn-500'
-                        : 'bg-success-500'
-                      : current
-                        ? 'bg-brand-400'
-                        : 'bg-ink-100',
+                    : done || current
+                      ? visual.dot
+                      : 'bg-ink-100',
                 )}
               />
             </div>
