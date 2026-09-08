@@ -2,31 +2,33 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  BadgePercent,
-  ClipboardCheck,
-  CreditCard,
+  Heart,
+  LayoutGrid,
   PackageCheck,
   Send,
+  Store,
   Timer,
   Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { LinkButton } from '@/components/ui/Button';
 import { ProductGridSkeleton } from '@/components/ui/Skeleton';
+import { Rating } from '@/components/ui/Rating';
 import { SupplierLogo } from '@/components/ui/ProductImage';
 import { ProductShelf } from '@/components/catalog/ProductGrid';
 import { CategoryIcon } from '@/components/layout/CategoryIcon';
 import { categories } from '@/data/categories';
 import { useSimulatedLoad } from '@/hooks/useSimulatedLoad';
 import { cn } from '@/lib/cn';
-import { money, withCount } from '@/lib/format';
-import { useAppState } from '@/store/AppContext';
+import { withCount } from '@/lib/format';
+import { useAppState, useDispatch } from '@/store/AppContext';
 import {
+  activeDeliveries,
   activeProducts,
   frequentlyOrdered,
-  ordersKpi,
   sortProducts,
 } from '@/store/selectors';
+import type { Supplier } from '@/types';
 
 const slides = [
   {
@@ -55,32 +57,50 @@ const slides = [
   },
   {
     id: 'promo-4',
-    title: 'Приёмка с актом расхождений',
-    text: 'Кладовщик фиксирует недовоз и брак прямо в интерфейсе, акт уходит поставщику.',
-    cta: 'Посмотреть приёмку',
-    to: '/orders',
+    title: 'Отслеживайте поставки в реальном времени',
+    text: 'Статусы «в пути» и «доставлена» видны в разделе Поставки — с трекером этапов.',
+    cta: 'Мои поставки',
+    to: '/deliveries',
     hue: 150,
   },
 ];
 
-const quickLinks = [
-  { icon: CreditCard, label: 'Хочу отсрочку', hint: 'до 21 дня', to: '/profile' },
-  { icon: BadgePercent, label: 'Кешбэк 3 %', hint: 'на первые заявки', to: '/catalog' },
-  { icon: Send, label: 'Наш Telegram', hint: 'статусы поставок', to: '/chats' },
-  { icon: Truck, label: 'Условия доставки', hint: 'по каждому поставщику', to: '/suppliers' },
-  { icon: ClipboardCheck, label: 'Акты расхождений', hint: 'история приёмок', to: '/orders' },
+const hubCards = [
+  {
+    icon: Truck,
+    title: 'Поставки',
+    hint: 'Трекинг этапов и приёмка',
+    to: '/deliveries',
+    countKey: 'deliveries' as const,
+  },
+  {
+    icon: LayoutGrid,
+    title: 'Каталог',
+    hint: 'Категории и оформление заявки',
+    to: '/catalog',
+    countKey: 'categories' as const,
+  },
+  {
+    icon: Store,
+    title: 'Поставщики',
+    hint: 'Каталог и избранные партнёры',
+    to: '/suppliers',
+    countKey: 'favoriteSuppliers' as const,
+  },
 ];
 
 export function HomePage() {
   const state = useAppState();
+  const dispatch = useDispatch();
   const loading = useSimulatedLoad([]);
   const [slide, setSlide] = useState(0);
-  const kpi = ordersKpi(state);
 
   useEffect(() => {
     const id = window.setInterval(() => setSlide((s) => (s + 1) % slides.length), 6000);
     return () => window.clearInterval(id);
   }, []);
+
+  const allDeliveriesCount = useMemo(() => activeDeliveries(state).length, [state]);
 
   const shelves = useMemo(() => {
     const all = activeProducts(state);
@@ -92,103 +112,102 @@ export function HomePage() {
     };
   }, [state]);
 
-  const topSuppliers = [...state.suppliers].sort((a, b) => b.rating - a.rating).slice(0, 6);
+  const featuredSuppliers = useMemo(() => {
+    const favoriteIds = new Set(state.favoriteSuppliers);
+    const favorites = state.favoriteSuppliers
+      .map((id) => state.suppliers.find((s) => s.id === id))
+      .filter((s): s is Supplier => Boolean(s));
+    const rest = state.suppliers
+      .filter((s) => !favoriteIds.has(s.id))
+      .sort((a, b) => b.rating - a.rating);
+    return [...favorites, ...rest].slice(0, 6);
+  }, [state]);
+
   const counts = new Map<string, number>();
   for (const product of state.products) {
     if (product.isActive) counts.set(product.categoryId, (counts.get(product.categoryId) ?? 0) + 1);
   }
 
+  const hubCounts = {
+    deliveries: allDeliveriesCount,
+    categories: categories.length,
+    favoriteSuppliers: state.favoriteSuppliers.length,
+  };
+
   return (
     <div className="page pt-5">
-      <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
-        <div className="relative overflow-hidden rounded-xl">
-          <div
-            className="flex transition-transform duration-500 ease-out"
-            style={{ transform: `translateX(-${slide * 100}%)` }}
-          >
-            {slides.map((item) => (
-              <div
-                key={item.id}
-                className="flex min-w-full flex-col justify-center gap-3 p-7 sm:p-10"
-                style={{
-                  background: `linear-gradient(120deg, hsl(${item.hue} 70% 96%), hsl(${item.hue} 60% 88%))`,
-                }}
-              >
-                <Badge tone="info" className="w-fit bg-white/80">
-                  SUPL для HoReCa
-                </Badge>
-                <h1 className="max-w-lg text-[26px] leading-tight sm:text-[32px]">{item.title}</h1>
-                <p className="max-w-md text-sm text-ink-700">{item.text}</p>
-                <LinkButton to={item.to} className="w-fit" icon={<ArrowRight className="size-4" />}>
-                  {item.cta}
-                </LinkButton>
-              </div>
-            ))}
-          </div>
-          <div className="absolute bottom-4 left-7 flex gap-1.5 sm:left-10">
-            {slides.map((item, i) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSlide(i)}
-                aria-label={`Слайд ${i + 1}`}
-                className={cn(
-                  'h-1.5 cursor-pointer rounded-full transition-all',
-                  i === slide ? 'w-6 bg-brand-600' : 'w-2.5 bg-ink-900/20',
-                )}
-              />
-            ))}
-          </div>
+      <div className="relative overflow-hidden rounded-xl">
+        <div
+          className="flex transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${slide * 100}%)` }}
+        >
+          {slides.map((item) => (
+            <div
+              key={item.id}
+              className="flex min-w-full flex-col justify-center gap-3 p-7 sm:p-10"
+              style={{
+                background: `linear-gradient(120deg, hsl(${item.hue} 70% 96%), hsl(${item.hue} 60% 88%))`,
+              }}
+            >
+              <Badge tone="info" className="w-fit bg-white/80">
+                SUPL для HoReCa
+              </Badge>
+              <h1 className="max-w-lg text-[26px] leading-tight sm:text-[32px]">{item.title}</h1>
+              <p className="max-w-md text-sm text-ink-700">{item.text}</p>
+              <LinkButton to={item.to} className="w-fit" icon={<ArrowRight className="size-4" />}>
+                {item.cta}
+              </LinkButton>
+            </div>
+          ))}
         </div>
-
-        <div className="card flex flex-col gap-3 p-4">
-          <p className="text-sm font-bold text-ink-900">Операционная сводка</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Link to="/orders" className="rounded-lg bg-ink-50 p-3 hover:bg-brand-50">
-              <p className="text-[11px] tracking-wide text-ink-500 uppercase">В работе</p>
-              <p className="mt-1 text-lg font-bold text-ink-900">{money(kpi.inWorkAmount)}</p>
-              <p className="text-[11px] text-ink-500">
-                {withCount(kpi.inWorkCount, 'заявка', 'заявки', 'заявок')}
-              </p>
-            </Link>
-            <Link to="/orders?status=shipped" className="rounded-lg bg-ink-50 p-3 hover:bg-brand-50">
-              <p className="text-[11px] tracking-wide text-ink-500 uppercase">Сегодня</p>
-              <p className="mt-1 text-lg font-bold text-ink-900">{kpi.todayCount}</p>
-              <p className="text-[11px] text-ink-500">поставок</p>
-            </Link>
-            <Link to="/orders?overdue=1" className="rounded-lg bg-danger-50 p-3 hover:bg-danger-100">
-              <p className="text-[11px] tracking-wide text-danger-600 uppercase">Просрочено</p>
-              <p className="mt-1 text-lg font-bold text-danger-600">{kpi.overdueCount}</p>
-              <p className="text-[11px] text-danger-600/80">требуют звонка</p>
-            </Link>
-            <Link to="/orders?tab=acts" className="rounded-lg bg-warn-50 p-3 hover:bg-warn-100">
-              <p className="text-[11px] tracking-wide text-warn-600 uppercase">Расхождения</p>
-              <p className="mt-1 text-lg font-bold text-warn-600">{kpi.actsCount}</p>
-              <p className="text-[11px] text-warn-600/80">{money(kpi.actsAmount)}</p>
-            </Link>
-          </div>
-          <LinkButton to="/orders" variant="secondary" block size="sm">
-            Открыть операционный контур
-          </LinkButton>
+        <div className="absolute bottom-4 left-7 flex gap-1.5 sm:left-10">
+          {slides.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setSlide(i)}
+              aria-label={`Слайд ${i + 1}`}
+              className={cn(
+                'h-1.5 cursor-pointer rounded-full transition-all',
+                i === slide ? 'w-6 bg-brand-600' : 'w-2.5 bg-ink-900/20',
+              )}
+            />
+          ))}
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-        {quickLinks.map((link) => (
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        {hubCards.map((hub) => (
           <Link
-            key={link.label}
-            to={link.to}
-            className="card flex items-center gap-3 p-3 transition-shadow hover:shadow-[var(--shadow-hover)]"
+            key={hub.title}
+            to={hub.to}
+            className="card flex items-center gap-4 p-4 transition-shadow hover:shadow-[var(--shadow-hover)]"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-              <link.icon className="size-4.5" />
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+              <hub.icon className="size-5" />
             </span>
-            <span className="min-w-0">
-              <span className="block truncate text-[13px] font-semibold text-ink-900">
-                {link.label}
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <span className="text-[15px] font-bold text-ink-900">{hub.title}</span>
+                <Badge tone="neutral" className="text-[11px]">
+                  {hub.countKey === 'deliveries' &&
+                    withCount(hubCounts.deliveries, 'активная', 'активные', 'активных')}
+                  {hub.countKey === 'categories' &&
+                    withCount(hubCounts.categories, 'категория', 'категории', 'категорий')}
+                  {hub.countKey === 'favoriteSuppliers' &&
+                    (hubCounts.favoriteSuppliers > 0
+                      ? withCount(
+                          hubCounts.favoriteSuppliers,
+                          'избранный',
+                          'избранных',
+                          'избранных',
+                        )
+                      : `${state.suppliers.length} партнёров`)}
+                </Badge>
               </span>
-              <span className="block truncate text-[11px] text-ink-500">{link.hint}</span>
+              <span className="mt-0.5 block text-[13px] text-ink-500">{hub.hint}</span>
             </span>
+            <ArrowRight className="size-4 shrink-0 text-ink-400" />
           </Link>
         ))}
       </div>
@@ -259,26 +278,45 @@ export function HomePage() {
       )}
 
       <section className="mt-10">
-        <div className="mb-3 flex items-end justify-between gap-2">
-          <h2 className="text-[19px]">Проверенные поставщики</h2>
-          <Link to="/suppliers" className="text-[13px] font-medium text-brand-600 hover:underline">
-            Каталог поставщиков
-          </Link>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+          <h2 className="text-[19px]">Ваши и проверенные поставщики</h2>
+          <div className="flex items-center gap-3">
+            <Link to="/favorites" className="text-[13px] font-medium text-brand-600 hover:underline">
+              Избранные
+            </Link>
+            <Link to="/suppliers" className="text-[13px] font-medium text-brand-600 hover:underline">
+              Каталог поставщиков
+            </Link>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {topSuppliers.map((supplier) => (
-            <Link
-              key={supplier.id}
-              to={`/suppliers/${supplier.id}`}
-              className="card flex flex-col items-center gap-2 p-3.5 text-center transition-shadow hover:shadow-[var(--shadow-hover)]"
-            >
-              <SupplierLogo name={supplier.name} hue={supplier.hue} className="size-12" />
-              <span className="text-[13px] font-semibold text-ink-900">{supplier.name}</span>
-              <span className="text-[11px] text-ink-500">
-                {supplier.city} · {supplier.rating}
-              </span>
-            </Link>
-          ))}
+          {featuredSuppliers.map((supplier) => {
+            const isFavorite = state.favoriteSuppliers.includes(supplier.id);
+            return (
+              <div
+                key={supplier.id}
+                className="card relative flex flex-col items-center gap-2 p-3.5 text-center transition-shadow hover:shadow-[var(--shadow-hover)]"
+              >
+                <button
+                  type="button"
+                  aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
+                  className={cn(
+                    'absolute top-2.5 right-2.5 cursor-pointer rounded-full p-1 text-ink-400 transition-colors hover:text-danger-500',
+                    isFavorite && 'text-danger-500',
+                  )}
+                  onClick={() => dispatch({ type: 'favorites/toggleSupplier', supplierId: supplier.id })}
+                >
+                  <Heart className={cn('size-3.5', isFavorite && 'fill-current')} />
+                </button>
+                <Link to={`/suppliers/${supplier.id}`} className="flex flex-col items-center gap-2">
+                  <SupplierLogo name={supplier.name} hue={supplier.hue} className="size-12" />
+                  <span className="text-[13px] font-semibold text-ink-900">{supplier.name}</span>
+                  <span className="text-[11px] text-ink-500">{supplier.city}</span>
+                  <Rating value={supplier.rating} count={supplier.reviewsCount} showValue={false} />
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -302,7 +340,7 @@ export function HomePage() {
             {
               icon: Truck,
               title: '3. Трекинг',
-              text: 'Статусы «в пути» и «доставлена» видны в операционном контуре.',
+              text: 'Статусы «в пути» и «доставлена» видны в разделе Поставки.',
             },
             {
               icon: PackageCheck,

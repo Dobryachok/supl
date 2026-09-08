@@ -35,6 +35,7 @@ export function CategoryPage() {
   const category = categoryBySlug.get(slug);
 
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<CatalogSort>('popular');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
@@ -47,6 +48,7 @@ export function CategoryPage() {
     if (!category) return;
     const sub = category.subcategories.find((s) => s.slug === subSlug);
     setFilters({ ...emptyFilters, subs: sub ? [sub.id] : [] });
+    setSearchQuery('');
     setPage(1);
   }, [slug, subSlug, category]);
 
@@ -61,6 +63,7 @@ export function CategoryPage() {
       state,
       {
         categoryId: category.id,
+        query: searchQuery || undefined,
         subcategoryIds: filters.subs,
         supplierIds: filters.suppliers,
         brands: filters.brands,
@@ -74,7 +77,7 @@ export function CategoryPage() {
       },
       sort,
     );
-  }, [state, category, filters, sort]);
+  }, [state, category, filters, sort, searchQuery]);
 
   if (!category) return <NotFoundPage />;
 
@@ -218,13 +221,17 @@ export function CategoryPage() {
 
         <div className="min-w-0 flex-1">
           <SortBar
-            total={result.length}
             sort={sort}
             onSortChange={setSort}
             view={view}
             onViewChange={setView}
             onOpenFilters={() => setDrawerOpen(true)}
             filterCount={activeFilterCount(filters)}
+            searchQuery={searchQuery}
+            onSearchChange={(query) => {
+              setSearchQuery(query);
+              setPage(1);
+            }}
             className="mb-3"
           />
 

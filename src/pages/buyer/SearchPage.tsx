@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -32,11 +32,19 @@ export function SearchPage() {
   const state = useAppState();
   const [tab, setTab] = useState('products');
   const [filters, setFilters] = useState<FilterState>(emptyFilters);
+  const [refineQuery, setRefineQuery] = useState('');
   const [sort, setSort] = useState<CatalogSort>('popular');
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const loading = useSimulatedLoad([query]);
+
+  useEffect(() => {
+    setRefineQuery('');
+    setPage(1);
+  }, [query]);
+
+  const combinedQuery = [query, refineQuery].filter(Boolean).join(' ').trim();
 
   const pool = useMemo(() => filterProducts(state, { query }, 'popular'), [state, query]);
 
@@ -45,7 +53,7 @@ export function SearchPage() {
       filterProducts(
         state,
         {
-          query,
+          query: combinedQuery || undefined,
           supplierIds: filters.suppliers,
           brands: filters.brands,
           countries: filters.countries,
@@ -58,7 +66,7 @@ export function SearchPage() {
         },
         sort,
       ),
-    [state, query, filters, sort],
+    [state, combinedQuery, filters, sort],
   );
 
   const matchedSuppliers = state.suppliers.filter((s) => {
@@ -115,13 +123,18 @@ export function SearchPage() {
           <div className="hidden w-[260px] shrink-0 lg:block">{sidebar}</div>
           <div className="min-w-0 flex-1">
             <SortBar
-              total={result.length}
               sort={sort}
               onSortChange={setSort}
               view={view}
               onViewChange={setView}
               onOpenFilters={() => setDrawerOpen(true)}
               filterCount={activeFilterCount(filters)}
+              searchQuery={refineQuery}
+              onSearchChange={(value) => {
+                setRefineQuery(value);
+                setPage(1);
+              }}
+              searchPlaceholder="Уточнить результаты"
               className="mb-3"
             />
             {loading ? (

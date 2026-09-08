@@ -4,8 +4,9 @@ import { ChevronRight, Store } from 'lucide-react';
 import { Chip } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Checkbox, Input, Select, Switch } from '@/components/ui/Field';
+import { Checkbox, Select, Switch } from '@/components/ui/Field';
 import { RowsSkeleton } from '@/components/ui/Skeleton';
+import { SortBar } from '@/components/catalog/SortBar';
 import { SupplierCard } from '@/components/catalog/SupplierCard';
 import { categories } from '@/data/categories';
 import { useSimulatedLoad } from '@/hooks/useSimulatedLoad';
@@ -14,6 +15,12 @@ import { useAppState } from '@/store/AppContext';
 import { productsOfSupplier } from '@/store/selectors';
 
 type Sort = 'rating' | 'orders' | 'name';
+
+const supplierSortOptions = [
+  { value: 'rating' as const, label: 'Сначала с высоким рейтингом' },
+  { value: 'orders' as const, label: 'Сначала популярные' },
+  { value: 'name' as const, label: 'По названию' },
+];
 
 export function SuppliersPage() {
   const state = useAppState();
@@ -93,12 +100,7 @@ export function SuppliersPage() {
           <div className="card scroll-thin sticky-below-header-scroll p-4">
             <p className="text-sm font-bold text-ink-900">Фильтры</p>
 
-            <div className="mt-3 space-y-3">
-              <Input
-                placeholder="Название или ИНН"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+            <div className="space-y-3">
               <Select value={city} onChange={(e) => setCity(e.target.value)}>
                 <option value="">Все города</option>
                 {cities.map((item) => (
@@ -154,29 +156,19 @@ export function SuppliersPage() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              placeholder="Поиск поставщика"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="max-w-xs lg:hidden"
-            />
-            <p className="text-[13px] text-ink-500">
-              {withCount(result.length, 'поставщик', 'поставщика', 'поставщиков')}
-            </p>
-            <Select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              className="ml-auto h-9 w-56 text-[13px]"
-            >
-              <option value="rating">Сначала с высоким рейтингом</option>
-              <option value="orders">Сначала популярные</option>
-              <option value="name">По названию</option>
-            </Select>
-          </div>
+          <SortBar
+            sort={sort}
+            onSortChange={setSort}
+            searchQuery={query}
+            onSearchChange={setQuery}
+            searchPlaceholder="Поиск поставщика"
+            sortOptions={supplierSortOptions}
+            showViewToggle={false}
+            className="mb-3"
+          />
 
           {categoryIds.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mb-3 flex flex-wrap gap-1.5">
               {categoryIds.map((id) => (
                 <Chip
                   key={id}
@@ -188,7 +180,7 @@ export function SuppliersPage() {
             </div>
           )}
 
-          <div className="mt-3 space-y-3">
+          <div className="space-y-3">
             {loading ? (
               <RowsSkeleton count={4} />
             ) : result.length === 0 ? (

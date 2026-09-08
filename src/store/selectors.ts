@@ -126,6 +126,7 @@ export function orderTotals(order: Order): OrderTotals {
 }
 
 export const activeStatuses: OrderStatus[] = ['draft', 'sent', 'confirmed', 'shipped', 'delivered'];
+export const trackedStatuses: OrderStatus[] = ['sent', 'confirmed', 'shipped', 'delivered'];
 export const closedStatuses: OrderStatus[] = [
   'accepted',
   'partially_accepted',
@@ -142,6 +143,80 @@ export interface OrdersKpi {
   todayCount: number;
   actsCount: number;
   actsAmount: number;
+}
+
+/** Активные поставки для трекинга — отсортированы по дате доставки. */
+export function activeDeliveries(state: AppState, limit?: number): Order[] {
+  const list = state.orders
+    .filter((o) => trackedStatuses.includes(o.status))
+    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate));
+  return limit ? list.slice(0, limit) : list;
+}
+
+export const deliveryClosedStatuses: OrderStatus[] = ['accepted', 'partially_accepted', 'refused'];
+
+export type DeliveryCalendarStatusFilter =
+  | 'all'
+  | 'overdue'
+  | 'acceptance'
+  | 'closed'
+  | 'in_transit';
+
+export interface DeliveryCalendarFilters {
+  status: DeliveryCalendarStatusFilter;
+  supplierId: string;
+  outletId: string;
+  includeClosed: boolean;
+}
+
+export const emptyDeliveryCalendarFilters: DeliveryCalendarFilters = {
+  status: 'all',
+  supplierId: '',
+  outletId: '',
+  includeClosed: false,
+};
+
+export function calendarBaseOrders(state: AppState, includeClosed: boolean): Order[] {
+  const allowed = new Set<OrderStatus>(trackedStatuses);
+  if (includeClosed) {
+    for (const status of deliveryClosedStatuses) allowed.add(status);
+  }
+  return state.orders.filter((o) => allowed.has(o.status));
+}
+
+export function filterDeliveries(state: AppState, filters: DeliveryCalendarFilters): Order[] {
+  const includeClosed = filters.includeClosed || filters.status === 'closed';
+  return calendarBaseOrders(state, includeClosed).filter((order) => {
+    if (filters.supplierId && order.supplierId !== filters.supplierId) return false;
+    if (filters.outletId && order.outletId !== filters.outletId) return false;
+
+    switch (filters.status) {
+      case 'overdue':
+        return isOverdue(order);
+      case 'acceptance':
+        return order.status === 'delivered';
+      case 'closed':
+        return deliveryClosedStatuses.includes(order.status);
+      case 'in_transit':
+        return order.status === 'shipped';
+      case 'all':
+      default:
+        return true;
+    }
+  });
+}
+
+export function deliveriesByDate(orders: Order[]): Map<string, Order[]> {
+  const map = new Map<string, Order[]>();
+  for (const order of orders) {
+    const list = map.get(order.deliveryDate) ?? [];
+    list.push(order);
+    map.set(order.deliveryDate, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => a.deliveryWindow.localeCompare(b.deliveryWindow));
+  }
+  return map;
 }
 
 export function ordersKpi(state: AppState): OrdersKpi {

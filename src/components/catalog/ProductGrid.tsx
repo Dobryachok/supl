@@ -2,6 +2,14 @@ import { cn } from '@/lib/cn';
 import type { Product } from '@/types';
 import { ProductCard } from './ProductCard';
 
+export function catalogGridClass(columns: 3 | 4 | 5 = 4) {
+  return cn(
+    'grid grid-cols-2 gap-3 sm:grid-cols-3',
+    columns === 4 && 'xl:grid-cols-4',
+    columns === 5 && 'xl:grid-cols-5',
+  );
+}
+
 export function ProductGrid({
   products,
   view = 'grid',
@@ -24,14 +32,7 @@ export function ProductGrid({
   }
 
   return (
-    <div
-      className={cn(
-        'grid grid-cols-2 gap-3 sm:grid-cols-3',
-        columns === 4 && 'xl:grid-cols-4',
-        columns === 5 && 'xl:grid-cols-5',
-        className,
-      )}
-    >
+    <div className={cn(catalogGridClass(columns), className)}>
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

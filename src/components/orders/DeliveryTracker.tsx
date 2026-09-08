@@ -8,16 +8,17 @@ import type { Order, OrderStatus } from '@/types';
 interface Stage {
   status: OrderStatus;
   label: string;
+  caption: string;
   hint: string;
   icon: LucideIcon;
 }
 
 const stages: Stage[] = [
-  { status: 'sent', label: 'Заявка', hint: 'отправлена поставщику', icon: Send },
-  { status: 'confirmed', label: 'Подтверждена', hint: 'поставщик собирает заказ', icon: CheckCircle2 },
-  { status: 'shipped', label: 'В пути', hint: 'машина вышла в рейс', icon: Truck },
-  { status: 'delivered', label: 'Доставлена', hint: 'привезли на склад', icon: PackageCheck },
-  { status: 'accepted', label: 'Приёмка', hint: 'проверена на складе', icon: ClipboardCheck },
+  { status: 'sent', label: 'Заявка', caption: 'Заявка отправлена', hint: 'отправлена поставщику', icon: Send },
+  { status: 'confirmed', label: 'Подтверждена', caption: 'Подтверждена', hint: 'поставщик собирает заказ', icon: CheckCircle2 },
+  { status: 'shipped', label: 'В пути', caption: 'В пути', hint: 'машина вышла в рейс', icon: Truck },
+  { status: 'delivered', label: 'Доставлена', caption: 'Доставлена', hint: 'привезли на склад', icon: PackageCheck },
+  { status: 'accepted', label: 'Приёмка', caption: 'Приёмка', hint: 'проверена на складе', icon: ClipboardCheck },
 ];
 
 const breakStatuses: Partial<Record<OrderStatus, { label: string; icon: LucideIcon; text: string }>> = {
@@ -154,33 +155,58 @@ export function DeliveryTracker({ order, className }: { order: Order; className?
 export function DeliveryTrackerMini({ order, className }: { order: Order; className?: string }) {
   const broken = breakStatuses[order.status];
   const reached = reachedIndex(order);
+  const partial = order.status === 'partially_accepted';
 
   return (
-    <div className={cn('flex items-center gap-1.5', className)}>
-      {stages.map((stage, index) => {
-        const done = index < reached;
-        return (
-          <span
-            key={stage.status}
-            title={`${stage.label} — ${stage.hint}`}
-            className={cn(
-              'h-1.5 flex-1 rounded-full',
-              broken
-                ? done
-                  ? 'bg-danger-500'
-                  : 'bg-ink-100'
-                : done
-                  ? order.status === 'partially_accepted'
-                    ? 'bg-warn-500'
-                    : 'bg-success-500'
-                  : 'bg-ink-100',
-            )}
-          />
-        );
-      })}
-      <span className="ml-1 shrink-0 text-[11px] font-medium text-ink-500">
-        {broken ? orderStatusLabels[order.status] : `${reached}/${stages.length}`}
-      </span>
+    <div className={cn('space-y-1', className)}>
+      <div className="flex gap-1">
+        {stages.map((stage, index) => {
+          const done = index < reached;
+          const current = index === reached - 1 && !broken;
+          const caption =
+            stage.status === 'accepted' && partial
+              ? 'Расхождения'
+              : stage.caption;
+
+          return (
+            <div key={stage.status} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+              <span
+                title={`${stage.label} — ${stage.hint}`}
+                className={cn(
+                  'w-full truncate text-center text-[9px] leading-tight sm:text-[10px]',
+                  done
+                    ? broken
+                      ? 'font-medium text-danger-600'
+                      : partial && stage.status === 'accepted'
+                        ? 'font-medium text-warn-700'
+                        : 'font-medium text-ink-700'
+                    : current
+                      ? 'font-medium text-brand-600'
+                      : 'text-ink-300',
+                )}
+              >
+                {caption}
+              </span>
+              <span
+                className={cn(
+                  'h-1.5 w-full rounded-full',
+                  broken
+                    ? done
+                      ? 'bg-danger-500'
+                      : 'bg-ink-100'
+                    : done
+                      ? partial && stage.status === 'accepted'
+                        ? 'bg-warn-500'
+                        : 'bg-success-500'
+                      : current
+                        ? 'bg-brand-400'
+                        : 'bg-ink-100',
+                )}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Store, Trash2 } from 'lucide-react';
 import { Button, LinkButton } from '@/components/ui/Button';
@@ -7,11 +7,13 @@ import { SupplierLogo } from '@/components/ui/ProductImage';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
+import { SortBar } from '@/components/catalog/SortBar';
 import { SupplierCard } from '@/components/catalog/SupplierCard';
 import { useCartActions } from '@/hooks/useCartActions';
 import { money, dateFull, withCount } from '@/lib/format';
 import { useAppState, useDispatch } from '@/store/AppContext';
-import { productsById } from '@/store/selectors';
+import { filterProducts, productsById } from '@/store/selectors';
+import type { CatalogSort } from '@/store/selectors';
 
 export function FavoritesPage() {
   const state = useAppState();
@@ -19,11 +21,23 @@ export function FavoritesPage() {
   const cart = useCartActions();
   const toast = useToast();
   const [tab, setTab] = useState('products');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sort, setSort] = useState<CatalogSort>('popular');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const products = productsById(state);
   const favoriteProducts = state.favoriteProducts
     .map((id) => products.get(id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const displayedProducts = useMemo(
+    () =>
+      filterProducts(
+        state,
+        { favoriteOnly: true, query: searchQuery || undefined },
+        sort,
+      ),
+    [state, searchQuery, sort],
+  );
   const favoriteSuppliers = state.favoriteSuppliers
     .map((id) => state.suppliers.find((s) => s.id === id))
     .filter((s): s is NonNullable<typeof s> => Boolean(s));
@@ -57,25 +71,22 @@ export function FavoritesPage() {
             />
           ) : (
             <>
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <p className="text-[13px] text-ink-500">
-                  {withCount(favoriteProducts.length, 'товар', 'товара', 'товаров')}
-                </p>
-                <Button
-                  size="sm"
-                  className="ml-auto"
-                  icon={<ShoppingCart className="size-3.5" />}
-                  onClick={() =>
-                    cart.addMany(
-                      favoriteProducts.map((p) => ({ productId: p.id, qty: p.minQty })),
-                      `${favoriteProducts.length} позиций из избранного`,
-                    )
-                  }
-                >
-                  Всё в корзину
-                </Button>
-              </div>
-              <ProductGrid products={favoriteProducts} />
+              <SortBar
+                sort={sort}
+                onSortChange={setSort}
+                view={view}
+                onViewChange={setView}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Поиск в избранном"
+                columns={5}
+                className="mb-3"
+              />
+              {displayedProducts.length === 0 ? (
+                <EmptyState title="Товары не найдены" text="Попробуйте другой запрос." compact />
+              ) : (
+                <ProductGrid products={displayedProducts} view={view} columns={5} />
+              )}
             </>
           ))}
 

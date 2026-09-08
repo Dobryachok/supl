@@ -15,13 +15,14 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Field, Select, Textarea } from '@/components/ui/Field';
+import { Field, Textarea } from '@/components/ui/Field';
 import { Modal } from '@/components/ui/Modal';
 import { SupplierLogo } from '@/components/ui/ProductImage';
 import { Rating, RatingInput } from '@/components/ui/Rating';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
+import { SortBar } from '@/components/catalog/SortBar';
 import { deliveryDaysLabel } from '@/components/catalog/SupplierCard';
 import { categoryById } from '@/data/categories';
 import { useChatActions } from '@/hooks/useChatActions';
@@ -38,8 +39,7 @@ import {
 import { useAppState, useDispatch } from '@/store/AppContext';
 import {
   nextDeliveryDates,
-  productsOfSupplier,
-  sortProducts,
+  filterProducts,
   supplierRatingSummary,
 } from '@/store/selectors';
 import type { CatalogSort } from '@/store/selectors';
@@ -53,15 +53,24 @@ export function SupplierPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [tab, setTab] = useState('products');
+  const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<CatalogSort>('popular');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
 
   const supplier = state.suppliers.find((s) => s.id === id);
   const products = useMemo(
-    () => (supplier ? sortProducts(productsOfSupplier(state, supplier.id).filter((p) => p.isActive), sort) : []),
-    [state, supplier, sort],
+    () =>
+      supplier
+        ? filterProducts(
+            state,
+            { supplierIds: [supplier.id], query: searchQuery || undefined },
+            sort,
+          )
+        : [],
+    [state, supplier, sort, searchQuery],
   );
 
   if (!supplier) return <NotFoundPage />;
@@ -207,25 +216,23 @@ export function SupplierPage() {
       <div className="mt-4">
         {tab === 'products' && (
           <>
-            <div className="mb-3 flex items-center gap-2">
-              <p className="text-[13px] text-ink-500">
-                {withCount(products.length, 'товар', 'товара', 'товаров')} в каталоге
-              </p>
-              <Select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as CatalogSort)}
-                className="ml-auto h-9 w-52 text-[13px]"
-              >
-                <option value="popular">Сначала популярные</option>
-                <option value="price-asc">Цена: по возрастанию</option>
-                <option value="price-desc">Цена: по убыванию</option>
-                <option value="name">По названию</option>
-              </Select>
-            </div>
+            <SortBar
+              sort={sort}
+              onSortChange={setSort}
+              view={view}
+              onViewChange={setView}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="Поиск в каталоге поставщика"
+              className="mb-3"
+            />
             {products.length === 0 ? (
-              <EmptyState title="Поставщик пока не выложил товары" compact />
+              <EmptyState
+                title={searchQuery ? 'Товары не найдены' : 'Поставщик пока не выложил товары'}
+                compact
+              />
             ) : (
-              <ProductGrid products={products} />
+              <ProductGrid products={products} view={view} />
             )}
           </>
         )}
