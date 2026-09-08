@@ -262,15 +262,12 @@ export function DeliveriesPage() {
 
   return (
     <div className="page pt-5">
-      <p className="text-[11px] font-semibold tracking-wider text-ink-400 uppercase">
-        График поставок
-      </p>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[26px]">Мои поставки</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            Календарь ожидаемых поставок и трекинг по этапам
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-brand-600 uppercase">
+            График поставок
           </p>
+          <h1 className="mt-0.5 text-[28px]">Мои поставки</h1>
         </div>
         <LinkButton to="/orders" variant="secondary">
           Все заявки

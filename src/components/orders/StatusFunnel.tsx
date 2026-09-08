@@ -1,15 +1,108 @@
-import { CheckCircle2, FileEdit, PackageCheck, Send, Truck, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  CheckCircle2,
+  FileEdit,
+  Layers,
+  PackageCheck,
+  Send,
+  Truck,
+  XCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { orderStatusStyles } from '@/lib/orderStatusStyles';
 import type { OrderStatus } from '@/types';
 
-const stages: { status: OrderStatus; label: string; icon: typeof Send }[] = [
-  { status: 'draft', label: 'Черновики', icon: FileEdit },
+const stages: { status: OrderStatus; label: string; icon: LucideIcon }[] = [
   { status: 'sent', label: 'Отправлены', icon: Send },
   { status: 'confirmed', label: 'Подтверждены', icon: CheckCircle2 },
   { status: 'shipped', label: 'В пути', icon: Truck },
   { status: 'delivered', label: 'Доставлены', icon: PackageCheck },
 ];
+
+const activeTileStyles: Record<OrderStatus | 'all' | 'accepted' | 'cancelled', string> = {
+  all: 'border-ink-900 ring-ink-300',
+  draft: 'border-ink-500 ring-ink-200',
+  sent: 'border-violet-500 ring-violet-200',
+  confirmed: 'border-indigo-500 ring-indigo-200',
+  shipped: 'border-sky-500 ring-sky-200',
+  delivered: 'border-lime-500 ring-lime-200',
+  accepted: 'border-emerald-500 ring-emerald-200',
+  cancelled: 'border-ink-500 ring-ink-200',
+  rejected: 'border-danger-500 ring-danger-200',
+  partially_accepted: 'border-yellow-500 ring-yellow-200',
+  refused: 'border-warn-500 ring-warn-200',
+};
+
+type FunnelKey = OrderStatus | 'all' | 'accepted' | 'cancelled';
+
+type FunnelTileConfig = {
+  key: FunnelKey;
+  label: string;
+  count: number;
+  icon: LucideIcon;
+  accentClass: string;
+  dividerBefore?: boolean;
+};
+
+function FunnelTile({
+  label,
+  count,
+  icon: Icon,
+  active,
+  onClick,
+  accentClass,
+  activeKey,
+  dividerBefore,
+}: {
+  label: string;
+  count: number;
+  icon: LucideIcon;
+  active: boolean;
+  onClick: () => void;
+  accentClass: string;
+  activeKey: FunnelKey;
+  dividerBefore?: boolean;
+}) {
+  const hasCount = count > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group flex h-full min-w-0 w-full cursor-pointer flex-col gap-2 rounded-xl border px-2.5 py-2.5 text-left transition-all sm:px-3',
+        'hover:border-ink-300 hover:shadow-sm',
+        active
+          ? cn('bg-white ring-2', activeTileStyles[activeKey])
+          : 'border-ink-200 bg-white',
+        !hasCount && !active && 'opacity-55',
+        dividerBefore && 'border-l-2 border-ink-200 pl-3',
+      )}
+    >
+      <div className="flex h-full min-w-0 flex-col gap-2">
+        <div className="flex min-w-0 items-start justify-between gap-1.5">
+          <span
+            className={cn(
+              'min-w-0 text-[10px] font-semibold leading-tight tracking-wide uppercase',
+              active ? 'text-ink-800' : 'text-ink-500',
+            )}
+          >
+            {label}
+          </span>
+          <span
+            className={cn(
+              'flex size-7 shrink-0 items-center justify-center rounded-lg',
+              hasCount || active ? accentClass : 'bg-ink-100 text-ink-400',
+            )}
+          >
+            <Icon className="size-3.5" strokeWidth={2.25} />
+          </span>
+        </div>
+        <span className="text-[22px] leading-none font-bold tabular-nums text-ink-900">{count}</span>
+      </div>
+    </button>
+  );
+}
 
 export function StatusFunnel({
   counts,
@@ -25,98 +118,61 @@ export function StatusFunnel({
   const closed = counts.accepted + counts.partially_accepted + counts.refused;
   const cancelled = counts.cancelled + counts.rejected;
 
+  const tiles: FunnelTileConfig[] = [
+    {
+      key: 'all',
+      label: 'Весь поток',
+      count: total,
+      icon: Layers,
+      accentClass: 'bg-ink-100 text-ink-700',
+    },
+    ...stages.map((stage) => ({
+      key: stage.status,
+      label: stage.label,
+      count: counts[stage.status],
+      icon: stage.icon,
+      accentClass: orderStatusStyles[stage.status].chip,
+      dividerBefore: stage.status === 'sent',
+    })),
+    {
+      key: 'accepted',
+      label: 'Закрыты',
+      count: closed,
+      icon: PackageCheck,
+      accentClass: orderStatusStyles.accepted.chip,
+    },
+    {
+      key: 'draft',
+      label: 'Черновики',
+      count: counts.draft,
+      icon: FileEdit,
+      accentClass: orderStatusStyles.draft.chip,
+      dividerBefore: true,
+    },
+    {
+      key: 'cancelled',
+      label: 'Отменены',
+      count: cancelled,
+      icon: XCircle,
+      accentClass: 'bg-ink-100 text-ink-600',
+    },
+  ];
+
   return (
-    <div className="card flex flex-wrap items-stretch divide-ink-100 overflow-hidden sm:divide-x">
-      <button
-        type="button"
-        onClick={() => onChange('all')}
-        className={cn(
-          'flex min-w-[120px] cursor-pointer flex-col justify-center px-4 py-3 text-left transition-colors',
-          value === 'all' ? 'bg-brand-50' : 'hover:bg-ink-50',
-        )}
-      >
-        <span className={cn('text-[13px] font-semibold', value === 'all' ? 'text-brand-700' : 'text-ink-700')}>
-          Весь поток
-        </span>
-        <span className="text-[22px] leading-tight font-bold text-ink-900">{total}</span>
-      </button>
-
-      <div className="flex flex-1 flex-wrap items-center">
-        {stages.map((stage, index) => (
-          <div key={stage.status} className="flex flex-1 items-center">
-            <button
-              type="button"
-              onClick={() => onChange(stage.status)}
-              className={cn(
-                'flex min-w-[130px] flex-1 cursor-pointer items-center gap-2.5 px-3 py-3 text-left transition-colors',
-                value === stage.status ? 'bg-brand-50' : 'hover:bg-ink-50',
-              )}
-            >
-              <span
-                className={cn(
-                  'flex size-8 shrink-0 items-center justify-center rounded-full',
-                  counts[stage.status] > 0
-                    ? orderStatusStyles[stage.status].iconDone
-                    : 'bg-ink-100 text-ink-400',
-                )}
-              >
-                <stage.icon className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[11px] tracking-wide text-ink-500 uppercase">
-                  {stage.label}
-                </span>
-                <span className="block text-lg leading-tight font-bold text-ink-900">
-                  {counts[stage.status]}
-                </span>
-              </span>
-            </button>
-            {index < stages.length - 1 && (
-              <span className="hidden h-px w-4 bg-ink-200 lg:block" aria-hidden />
-            )}
-          </div>
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 xl:grid-cols-8 xl:gap-3">
+        {tiles.map((tile) => (
+          <FunnelTile
+            key={tile.key}
+            label={tile.label}
+            count={tile.count}
+            icon={tile.icon}
+            active={value === tile.key}
+            activeKey={tile.key}
+            accentClass={tile.accentClass}
+            dividerBefore={tile.dividerBefore}
+            onClick={() => onChange(tile.key)}
+          />
         ))}
-      </div>
-
-      <div className="flex">
-        <button
-          type="button"
-          onClick={() => onChange('accepted')}
-          className={cn(
-            'flex min-w-[120px] cursor-pointer items-center gap-2.5 border-l border-ink-100 px-3 py-3 text-left transition-colors',
-            value === 'accepted' ? 'bg-success-50' : 'hover:bg-ink-50',
-          )}
-        >
-          <span
-            className={cn(
-              'flex size-8 shrink-0 items-center justify-center rounded-full',
-              orderStatusStyles.accepted.iconDone,
-            )}
-          >
-            <PackageCheck className="size-4" />
-          </span>
-          <span>
-            <span className="block text-[11px] tracking-wide text-ink-500 uppercase">Закрыты</span>
-            <span className="block text-lg leading-tight font-bold text-ink-900">{closed}</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange('cancelled')}
-          className={cn(
-            'flex min-w-[110px] cursor-pointer items-center gap-2.5 border-l border-ink-100 px-3 py-3 text-left transition-colors',
-            value === 'cancelled' ? 'bg-ink-100' : 'hover:bg-ink-50',
-          )}
-        >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-500">
-            <XCircle className="size-4" />
-          </span>
-          <span>
-            <span className="block text-[11px] tracking-wide text-ink-500 uppercase">Отменены</span>
-            <span className="block text-lg leading-tight font-bold text-ink-900">{cancelled}</span>
-          </span>
-        </button>
-      </div>
     </div>
   );
 }
