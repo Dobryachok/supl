@@ -1,36 +1,165 @@
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import { TD, TH, THead, TR, Table } from '@/components/ui/Table';
 import { SupplierLogo } from '@/components/ui/ProductImage';
 import { cn } from '@/lib/cn';
-import { dateShort, isoDate, money, relativeDay, startOfToday } from '@/lib/format';
+import { dateShort, isoDate, money, orderStatusLabels, relativeDay, startOfToday } from '@/lib/format';
 import { useAppState } from '@/store/AppContext';
 import { isOverdue, orderTotals } from '@/store/selectors';
-import type { Order } from '@/types';
+import type { Order, OrderStatus } from '@/types';
 import { StatusBadge } from './StatusBadge';
+
+type SortColumn = 'order' | 'supplier' | 'composition' | 'delivery' | 'amount' | 'status';
+type SortState = { column: SortColumn; direction: 'desc' | 'asc' } | null;
+
+const statusRank: Record<OrderStatus, number> = {
+  draft: 0,
+  sent: 1,
+  confirmed: 2,
+  shipped: 3,
+  delivered: 4,
+  accepted: 5,
+  partially_accepted: 6,
+  refused: 7,
+  rejected: 8,
+  cancelled: 9,
+};
+
+function nextSortState(column: SortColumn, current: SortState): SortState {
+  if (current?.column !== column) return { column, direction: 'desc' };
+  if (current.direction === 'desc') return { column, direction: 'asc' };
+  return null;
+}
+
+function SortableHeader({
+  label,
+  column,
+  sort,
+  onSort,
+  align = 'left',
+  width,
+}: {
+  label: string;
+  column: SortColumn;
+  sort: SortState;
+  onSort: (column: SortColumn) => void;
+  align?: 'left' | 'right';
+  width?: string;
+}) {
+  const active = sort?.column === column;
+
+  return (
+    <TH width={width} align={align} className="align-middle">
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          'flex w-full cursor-pointer items-center gap-1 text-[11px] leading-none font-semibold tracking-wide uppercase transition-colors hover:text-ink-700',
+          align === 'right' ? 'justify-end' : 'justify-start',
+          active ? 'text-ink-700' : 'text-ink-500',
+        )}
+      >
+        <span className="leading-none">{label}</span>
+        <ChevronDown
+          className={cn(
+            'size-3 shrink-0 text-ink-400 transition-transform',
+            active && sort.direction === 'asc' && 'rotate-180',
+            active && 'text-ink-600',
+          )}
+          aria-hidden
+        />
+      </button>
+    </TH>
+  );
+}
 
 export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; base?: string }) {
   const state = useAppState();
   const navigate = useNavigate();
   const today = isoDate(startOfToday());
+  const [sort, setSort] = useState<SortState>(null);
+
+  const sortedOrders = useMemo(() => {
+    if (!sort) return orders;
+
+    const list = [...orders];
+    const direction = sort.direction === 'desc' ? -1 : 1;
+
+    list.sort((a, b) => {
+      let result = 0;
+
+      switch (sort.column) {
+        case 'order':
+          result = a.createdAt.localeCompare(b.createdAt);
+          break;
+        case 'supplier':
+          result = a.supplierName.localeCompare(b.supplierName, 'ru');
+          break;
+        case 'composition':
+          result = a.lines.length - b.lines.length;
+          if (result === 0) {
+            result = (a.lines[0]?.name ?? '').localeCompare(b.lines[0]?.name ?? '', 'ru');
+          }
+          break;
+        case 'delivery':
+          result = a.deliveryDate.localeCompare(b.deliveryDate);
+          break;
+        case 'amount':
+          result = orderTotals(a).total - orderTotals(b).total;
+          break;
+        case 'status':
+          result = statusRank[a.status] - statusRank[b.status];
+          if (result === 0) {
+            result = orderStatusLabels[a.status].localeCompare(orderStatusLabels[b.status], 'ru');
+          }
+          break;
+      }
+
+      return result * direction;
+    });
+
+    return list;
+  }, [orders, sort]);
+
+  const handleSort = (column: SortColumn) => {
+    setSort((current) => nextSortState(column, current));
+  };
 
   return (
     <Table>
       <THead>
         <TR>
-          <TH width="17%">Заявка</TH>
-          <TH width="20%">Поставщик</TH>
-          <TH>Состав</TH>
-          <TH width="15%">Доставка</TH>
-          <TH width="12%" align="right">
-            Сумма
-          </TH>
-          <TH width="16%">Статус</TH>
-          <TH width="4%" />
+          <SortableHeader label="Заявка" column="order" sort={sort} onSort={handleSort} width="17%" />
+          <SortableHeader
+            label="Поставщик"
+            column="supplier"
+            sort={sort}
+            onSort={handleSort}
+            width="20%"
+          />
+          <SortableHeader label="Состав" column="composition" sort={sort} onSort={handleSort} />
+          <SortableHeader
+            label="Доставка"
+            column="delivery"
+            sort={sort}
+            onSort={handleSort}
+            width="15%"
+          />
+          <SortableHeader
+            label="Сумма"
+            column="amount"
+            sort={sort}
+            onSort={handleSort}
+            align="right"
+            width="12%"
+          />
+          <SortableHeader label="Статус" column="status" sort={sort} onSort={handleSort} width="16%" />
+          <TH width="4%" className="align-middle" />
         </TR>
       </THead>
       <tbody>
-        {orders.map((order) => {
+        {sortedOrders.map((order) => {
           const supplier = state.suppliers.find((s) => s.id === order.supplierId);
           const totals = orderTotals(order);
           const overdue = isOverdue(order);
