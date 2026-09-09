@@ -453,7 +453,7 @@ function DeliveriesSearchInput({
     >
       <Search className="size-4 shrink-0 text-ink-400" />
       <input
-        type="search"
+        type="text"
         placeholder="Поиск по заявке, поставщику, адресу"
         value={value}
         onChange={(e) => onChange(e.target.value)}

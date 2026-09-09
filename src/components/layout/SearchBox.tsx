@@ -72,10 +72,10 @@ export function SearchBox({ className }: { className?: string }) {
           <button
             type="button"
             onClick={() => setQuery('')}
-            className="cursor-pointer text-ink-400 hover:text-ink-700"
+            className="mr-1 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-600"
             aria-label="Очистить поиск"
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </button>
         )}
         <button

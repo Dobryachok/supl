@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
+  ChevronLeft,
+  ChevronRight,
   ClipboardList,
   Heart,
   LayoutGrid,
@@ -150,9 +152,66 @@ export function Header() {
         </div>
       </div>
 
-      <div className="hidden border-t border-ink-100 lg:block">
-        <div className="page no-scrollbar flex h-10 items-center gap-5 overflow-x-auto text-[13px]">
-          {categories.slice(0, 8).map((category) => (
+      <CategoryNavBar />
+
+      {mobileOpen && <MobileMenu onClose={() => setMobileOpen(false)} />}
+    </header>
+  );
+}
+
+function CategoryNavBar() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      observer.disconnect();
+    };
+  }, [updateScrollState]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({
+      left: direction === 'left' ? -280 : 280,
+      behavior: 'smooth',
+    });
+  };
+
+  return (
+    <div className="hidden border-t border-ink-100 lg:block">
+      <div className="page flex h-10 items-center gap-1">
+        <button
+          type="button"
+          onClick={() => scroll('left')}
+          disabled={!canScrollLeft}
+          className={cn(
+            'flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800',
+            !canScrollLeft && 'pointer-events-none opacity-30',
+          )}
+          aria-label="Прокрутить категории влево"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex min-w-0 flex-1 items-center gap-5 overflow-x-auto text-[13px]"
+        >
+          {categories.map((category) => (
             <NavLink
               key={category.id}
               to={`/catalog/${category.slug}`}
@@ -171,10 +230,21 @@ export function Header() {
             Все категории
           </Link>
         </div>
-      </div>
 
-      {mobileOpen && <MobileMenu onClose={() => setMobileOpen(false)} />}
-    </header>
+        <button
+          type="button"
+          onClick={() => scroll('right')}
+          disabled={!canScrollRight}
+          className={cn(
+            'flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800',
+            !canScrollRight && 'pointer-events-none opacity-30',
+          )}
+          aria-label="Прокрутить категории вправо"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 

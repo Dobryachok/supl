@@ -64,18 +64,17 @@ export function DeliveryCalendarFilters({
         onChange={(outletIds) => patch({ outletIds })}
         className="min-w-[10rem] flex-1"
       />
-      {hasActive && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="shrink-0"
-          icon={<RotateCcw className="size-3.5" />}
-          onClick={reset}
-        >
-          Сбросить
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="secondary"
+        size="md"
+        className="shrink-0"
+        icon={<RotateCcw className="size-4 text-ink-400" />}
+        onClick={reset}
+        disabled={!hasActive}
+      >
+        Сбросить
+      </Button>
     </div>
   );
 }
