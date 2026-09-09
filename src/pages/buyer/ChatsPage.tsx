@@ -113,10 +113,10 @@ export function ChatsPage() {
           </ul>
         </div>
 
-        <div className="p-4">
+        <div className="flex min-h-[520px] flex-col p-4">
           {active ? (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 pb-3">
+              <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-ink-100 pb-3">
                 <div>
                   <p className="text-sm font-bold text-ink-900">{active.subject}</p>
                   <p className="text-xs text-ink-500">
@@ -148,8 +148,8 @@ export function ChatsPage() {
                   </Link>
                 </div>
               </div>
-              <div className="pt-3">
-                <ChatPanel threadId={active.id} role="buyer" height="h-[420px]" />
+              <div className="min-h-0 flex-1 pt-3">
+                <ChatPanel threadId={active.id} role="buyer" height="h-full" />
               </div>
             </>
           ) : (

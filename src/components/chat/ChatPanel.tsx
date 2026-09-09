@@ -53,10 +53,10 @@ export function ChatPanel({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className={cn('flex min-h-0 flex-col', height)}>
       <div
         ref={scrollRef}
-        className={cn('scroll-thin flex-1 space-y-2.5 overflow-y-auto pr-1', height)}
+        className="scroll-thin min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1"
       >
         {thread.messages.length === 0 && (
           <p className="py-6 text-center text-[13px] text-ink-500">
@@ -101,7 +101,7 @@ export function ChatPanel({
         })}
       </div>
 
-      <div className="mt-3 flex items-end gap-2 border-t border-ink-100 pt-3">
+      <div className="mt-3 flex shrink-0 items-end gap-2 border-t border-ink-100 pt-3">
         <Textarea
           rows={2}
           value={text}
@@ -119,7 +119,7 @@ export function ChatPanel({
           Отправить
         </Button>
       </div>
-      <p className="mt-1 text-[11px] text-ink-400">Ctrl + Enter — отправить</p>
+      <p className="mt-1 shrink-0 text-[11px] text-ink-400">Ctrl + Enter — отправить</p>
     </div>
   );
 }
