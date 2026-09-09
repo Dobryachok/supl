@@ -296,15 +296,16 @@ export function SellerOrderPage() {
             </h2>
             <dl className="mt-3 space-y-2 text-[13px]">
               <div>
-                <dt className="text-ink-500">Дата и окно</dt>
                 <dd className="font-medium text-ink-900">
                   {dateFull(order.deliveryDate)}, {order.deliveryWindow}
                 </dd>
                 <dd className="text-xs text-ink-500">{relativeDay(order.deliveryDate)}</dd>
               </div>
               <div>
-                <dt className="text-ink-500">Точка</dt>
-                <dd className="font-medium text-ink-900">{outlet?.name}</dd>
+                <dd className="flex items-center gap-1 font-medium text-ink-900">
+                  <MapPin className="size-3.5 shrink-0 text-ink-400" />
+                  {outlet?.name}
+                </dd>
                 <dd className="text-xs text-ink-500">{order.deliveryAddress}</dd>
               </div>
               <div>
