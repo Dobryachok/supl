@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, MapPin, Plus, Trash2, Users } from 'lucide-react';
+import { MapPin, Plus, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Field';
@@ -7,7 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { uid } from '@/lib/ids';
-import { money, paymentLabels, withCount } from '@/lib/format';
+import { money, withCount } from '@/lib/format';
 import { useAppState, useDispatch } from '@/store/AppContext';
 import { ordersKpi } from '@/store/selectors';
 import type { Outlet } from '@/types';
@@ -93,7 +93,7 @@ export function ProfilePage() {
           { id: 'company', label: 'Реквизиты' },
           { id: 'outlets', label: 'Точки и склады', count: restaurant.outlets.length },
           { id: 'employees', label: 'Сотрудники', count: restaurant.employees.length },
-          { id: 'payment', label: 'Оплата и документы' },
+          { id: 'payment', label: 'Документы' },
         ]}
       />
 
@@ -211,39 +211,18 @@ export function ProfilePage() {
         )}
 
         {tab === 'payment' && (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="card p-4">
-              <h2 className="flex items-center gap-2 text-[15px]">
-                <Building2 className="size-4 text-ink-400" />
-                Способы оплаты
-              </h2>
-              <ul className="mt-3 space-y-2 text-[13px]">
-                {(['invoice', 'card', 'credit'] as const).map((method) => (
-                  <li key={method} className="flex items-center justify-between gap-2">
-                    <span className="text-ink-700">{paymentLabels[method]}</span>
-                    <Badge tone={method === 'credit' ? 'warn' : 'success'}>
-                      {method === 'credit' ? 'по согласованию' : 'доступно'}
-                    </Badge>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-xs text-ink-500">
-                Отсрочку платежа подключает каждый поставщик отдельно — запрос уходит в чат.
-              </p>
-            </div>
-            <div className="card p-4">
-              <h2 className="text-[15px]">Документооборот</h2>
-              <Field label="Формат закрывающих документов" className="mt-3">
-                <Select defaultValue="edo">
-                  <option value="edo">ЭДО (Диадок)</option>
-                  <option value="paper">Бумажные оригиналы</option>
-                  <option value="mixed">Смешанный</option>
-                </Select>
-              </Field>
-              <Field label="Email бухгалтерии" className="mt-3">
-                <Input defaultValue="buh@teplystol.ru" />
-              </Field>
-            </div>
+          <div className="card max-w-xl p-4">
+            <h2 className="text-[15px]">Документооборот</h2>
+            <Field label="Формат закрывающих документов" className="mt-3">
+              <Select defaultValue="edo">
+                <option value="edo">ЭДО (Диадок)</option>
+                <option value="paper">Бумажные оригиналы</option>
+                <option value="mixed">Смешанный</option>
+              </Select>
+            </Field>
+            <Field label="Email бухгалтерии" className="mt-3">
+              <Input defaultValue="buh@teplystol.ru" />
+            </Field>
           </div>
         )}
       </div>

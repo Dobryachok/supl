@@ -29,7 +29,6 @@ import { uid } from '@/lib/ids';
 import {
   dateFull,
   money,
-  paymentLabels,
   relativeDay,
   withCount,
 } from '@/lib/format';
@@ -171,7 +170,7 @@ export function SupplierPage() {
           </div>
         </div>
 
-        <dl className="mt-5 grid gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-5 grid gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2">
           <div className="rounded-lg bg-ink-50 p-3">
             <dt className="text-[11px] tracking-wide text-ink-500 uppercase">Доставка</dt>
             <dd className="mt-1 text-[15px] font-bold text-ink-900">
@@ -186,12 +185,6 @@ export function SupplierPage() {
             </dd>
             <dd className="text-xs text-ink-500">
               ближайшая — {deliveryDates[0] ? relativeDay(deliveryDates[0]) : '—'}
-            </dd>
-          </div>
-          <div className="rounded-lg bg-ink-50 p-3">
-            <dt className="text-[11px] tracking-wide text-ink-500 uppercase">Оплата</dt>
-            <dd className="mt-1 text-[13px] font-semibold text-ink-900">
-              {supplier.paymentMethods.map((m) => paymentLabels[m]).join(', ')}
             </dd>
           </div>
         </dl>

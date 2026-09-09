@@ -33,7 +33,6 @@ import { uid } from '@/lib/ids';
 import {
   dateFull,
   money,
-  paymentLabels,
   qty as formatQty,
   relativeDay,
   unitLabel,
@@ -249,7 +248,7 @@ export function ProductPage() {
               items={[
                 { id: 'description', label: 'Описание' },
                 { id: 'specs', label: 'Характеристики', count: product.specs.length },
-                { id: 'delivery', label: 'Доставка и оплата' },
+                { id: 'delivery', label: 'Доставка' },
                 { id: 'questions', label: 'Вопросы', count: questions.length },
               ]}
             />
@@ -292,7 +291,6 @@ export function ProductPage() {
                   <p>
                     Доставка {money(supplier.deliveryFee)} и бесплатно от {money(supplier.freeDeliveryFrom)}.
                   </p>
-                  <p>Способы оплаты: {supplier.paymentMethods.map((m) => paymentLabels[m]).join(', ')}.</p>
                   <p className="text-ink-500">Зоны доставки: {supplier.deliveryZones.join(' · ')}</p>
                 </div>
               )}
@@ -407,12 +405,6 @@ export function ProductPage() {
                 <dt className="text-ink-500">Ближайшая дата</dt>
                 <dd className="font-medium text-ink-800">
                   {deliveryDates[0] ? relativeDay(deliveryDates[0]) : '—'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-ink-500">Оплата</dt>
-                <dd className="text-right font-medium text-ink-800">
-                  {supplier.paymentMethods.map((m) => paymentLabels[m]).join(', ')}
                 </dd>
               </div>
             </dl>

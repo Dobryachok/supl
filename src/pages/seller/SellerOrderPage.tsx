@@ -26,7 +26,6 @@ import {
   dateTime,
   discrepancyLabels,
   money,
-  paymentLabels,
   qty as formatQty,
   relativeDay,
   verdictLabels,
@@ -313,10 +312,6 @@ export function SellerOrderPage() {
                 <dd className="text-ink-700">
                   {outlet?.contactName}, {outlet?.phone}
                 </dd>
-              </div>
-              <div>
-                <dt className="text-ink-500">Оплата</dt>
-                <dd className="text-ink-700">{paymentLabels[order.paymentMethod]}</dd>
               </div>
               {order.comment && (
                 <div>

@@ -9,7 +9,7 @@ import { SupplierLogo } from '@/components/ui/ProductImage';
 import { useToast } from '@/components/ui/Toast';
 import { useChatActions } from '@/hooks/useChatActions';
 import { orderNumber, uid } from '@/lib/ids';
-import { dateFull, money, paymentLabels, relativeDay, weekday, withCount } from '@/lib/format';
+import { dateFull, money, relativeDay, weekday, withCount } from '@/lib/format';
 import { useAppState, useDispatch } from '@/store/AppContext';
 import { cartGroups, nextDeliveryDates } from '@/store/selectors';
 import type { CartGroup } from '@/store/selectors';
@@ -284,27 +284,6 @@ export function CheckoutPage() {
                     </Select>
                   </Field>
                 </div>
-
-                <Field label="Способ оплаты" className="mt-3">
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {group.supplier.paymentMethods.map((method) => (
-                      <Radio
-                        key={method}
-                        name={`payment-${group.supplier.id}`}
-                        checked={form.payment === method}
-                        onChange={() => patchForm(group.supplier.id, { payment: method })}
-                        label={paymentLabels[method]}
-                        description={
-                          method === 'credit'
-                            ? 'до 21 дня'
-                            : method === 'invoice'
-                              ? 'счёт-фактура'
-                              : 'оплата при заказе'
-                        }
-                      />
-                    ))}
-                  </div>
-                </Field>
 
                 <Field label="Комментарий поставщику" className="mt-3">
                   <Textarea

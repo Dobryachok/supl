@@ -34,7 +34,6 @@ import {
   dateTime,
   discrepancyLabels,
   money,
-  paymentLabels,
   qty as formatQty,
   relativeDay,
   verdictLabels,
@@ -355,7 +354,7 @@ export function OrderPage() {
               <div className="card divide-y divide-ink-100">
                 {[
                   { label: `Заявка ${order.number}`, hint: 'печатная форма заявки' },
-                  { label: 'Счёт на оплату', hint: paymentLabels[order.paymentMethod] },
+                  { label: 'Счёт на оплату', hint: 'счёт-фактура' },
                   ...(act
                     ? [{ label: `Акт расхождений ${act.number}`, hint: verdictLabels[act.verdict] }]
                     : []),
@@ -399,10 +398,6 @@ export function OrderPage() {
               <div>
                 <dt className="text-ink-500">Телефон</dt>
                 <dd className="font-medium text-ink-900">{supplier.contacts.phone}</dd>
-              </div>
-              <div>
-                <dt className="text-ink-500">Оплата</dt>
-                <dd className="font-medium text-ink-900">{paymentLabels[order.paymentMethod]}</dd>
               </div>
             </dl>
           </div>

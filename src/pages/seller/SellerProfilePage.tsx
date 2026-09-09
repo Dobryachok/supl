@@ -23,10 +23,10 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { categoryById, categories } from '@/data/categories';
 import { cn } from '@/lib/cn';
-import { money, paymentLabels, qty as formatQty, withCount } from '@/lib/format';
+import { money, qty as formatQty, withCount } from '@/lib/format';
 import { useAppState, useDispatch } from '@/store/AppContext';
 import { discountPct, productsOfSupplier, sellerOrders, supplierRatingSummary } from '@/store/selectors';
-import type { PaymentMethod, Product, Supplier } from '@/types';
+import type { Product, Supplier } from '@/types';
 
 const CATALOG_VIEW_KEY = 'supl.seller.profile.catalogView';
 
@@ -49,8 +49,6 @@ const weekDays = [
   { value: 6, label: 'Сб' },
   { value: 7, label: 'Вс' },
 ];
-
-const payments: PaymentMethod[] = ['card', 'invoice', 'credit'];
 
 export function SellerProfilePage() {
   const state = useAppState();
@@ -163,7 +161,7 @@ export function SellerProfilePage() {
         onChange={setTab}
         items={[
           { id: 'storefront', label: 'Витрина' },
-          { id: 'delivery', label: 'Доставка и оплата' },
+          { id: 'delivery', label: 'Доставка' },
           { id: 'legal', label: 'Реквизиты и контакты' },
           { id: 'catalog', label: 'Мои товары', count: products.length },
         ]}
@@ -275,24 +273,6 @@ export function SellerProfilePage() {
                     </button>
                   );
                 })}
-              </div>
-
-              <p className="mt-4 text-[13px] font-semibold text-ink-900">Способы оплаты</p>
-              <div className="mt-1 grid gap-x-4 sm:grid-cols-3">
-                {payments.map((method) => (
-                  <Checkbox
-                    key={method}
-                    label={paymentLabels[method]}
-                    checked={draft.paymentMethods.includes(method)}
-                    onChange={(e) =>
-                      patch({
-                        paymentMethods: e.target.checked
-                          ? [...draft.paymentMethods, method]
-                          : draft.paymentMethods.filter((m) => m !== method),
-                      })
-                    }
-                  />
-                ))}
               </div>
             </section>
 
