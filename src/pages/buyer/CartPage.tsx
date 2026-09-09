@@ -5,7 +5,6 @@ import {
   BookmarkPlus,
   ShoppingCart,
   Trash2,
-  Truck,
 } from 'lucide-react';
 import { Button, LinkButton } from '@/components/ui/Button';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
@@ -87,36 +86,13 @@ export function CartPage() {
 
   return (
     <div className="page pt-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px]">Корзина</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            {withCount(groups.length, 'поставщик', 'поставщика', 'поставщиков')} ·{' '}
-            {withCount(state.cart.length, 'позиция', 'позиции', 'позиций')} · каждая группа
-            оформляется отдельной заявкой
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<BookmarkPlus className="size-3.5" />}
-            onClick={() => setTemplateOpen(true)}
-          >
-            Сохранить как шаблон
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Trash2 className="size-3.5" />}
-            onClick={() => {
-              dispatch({ type: 'cart/clear' });
-              toast.info('Корзина очищена');
-            }}
-          >
-            Очистить корзину
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-[26px]">Корзина</h1>
+        <p className="mt-1 text-[13px] text-ink-500">
+          {withCount(groups.length, 'поставщик', 'поставщика', 'поставщиков')} ·{' '}
+          {withCount(state.cart.length, 'позиция', 'позиции', 'позиций')} · каждая группа
+          оформляется отдельной заявкой
+        </p>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
@@ -275,8 +251,7 @@ export function CartPage() {
             >
               Оформить {selectedGroups.length > 1 ? `${selectedGroups.length} заявки` : 'заявку'}
             </Button>
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
-              <Truck className="size-3.5" />
+            <p className="mt-2 text-xs text-ink-500">
               По одной заявке на каждого поставщика — со своей датой доставки
             </p>
           </div>
@@ -291,6 +266,30 @@ export function CartPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              block
+              icon={<BookmarkPlus className="size-3.5" />}
+              onClick={() => setTemplateOpen(true)}
+            >
+              Сохранить как шаблон
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              block
+              icon={<Trash2 className="size-3.5" />}
+              onClick={() => {
+                dispatch({ type: 'cart/clear' });
+                toast.info('Корзина очищена');
+              }}
+            >
+              Очистить корзину
+            </Button>
           </div>
         </aside>
       </div>

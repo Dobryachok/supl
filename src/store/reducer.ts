@@ -8,7 +8,11 @@ function touch(order: Order): Order {
   return { ...order, updatedAt: new Date().toISOString() };
 }
 
-function notificationFor(order: Order, status: OrderStatus): AppNotification | null {
+function notificationFor(
+  order: Order,
+  status: OrderStatus,
+  actor?: Role,
+): AppNotification | null {
   const audience: Partial<Record<OrderStatus, Role>> = {
     sent: 'seller',
     confirmed: 'buyer',
@@ -20,7 +24,8 @@ function notificationFor(order: Order, status: OrderStatus): AppNotification | n
     refused: 'seller',
     cancelled: 'seller',
   };
-  const role = audience[status];
+  let role = audience[status];
+  if (status === 'delivered' && actor === 'buyer') role = 'seller';
   if (!role) return null;
 
   const texts: Partial<Record<OrderStatus, string>> = {
@@ -28,7 +33,10 @@ function notificationFor(order: Order, status: OrderStatus): AppNotification | n
     confirmed: `${order.supplierName} подтвердил заявку ${order.number}.`,
     rejected: `${order.supplierName} отклонил заявку ${order.number}.`,
     shipped: `Заявка ${order.number} передана в доставку.`,
-    delivered: `Заявка ${order.number} доставлена — требуется приёмка на складе.`,
+    delivered:
+      actor === 'buyer'
+        ? `Ресторан отметил поставку ${order.number} как доставленную.`
+        : `Заявка ${order.number} доставлена — требуется приёмка на складе.`,
     accepted: `Ресторан принял поставку ${order.number} полностью.`,
     partially_accepted: `По поставке ${order.number} оформлен акт расхождений.`,
     refused: `Ресторан отказался от поставки ${order.number}.`,
@@ -149,7 +157,7 @@ export function reducer(state: AppState, action: Action): AppState {
           },
         ],
       });
-      const notification = notificationFor(updated, action.status);
+      const notification = notificationFor(updated, action.status, action.actor);
       return {
         ...state,
         orders: state.orders.map((o) => (o.id === updated.id ? updated : o)),

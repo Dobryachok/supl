@@ -16,6 +16,7 @@ import { SupplierLogo } from '@/components/ui/ProductImage';
 import { Select } from '@/components/ui/Field';
 import { Logo } from './Header';
 import { NotificationsMenu } from './NotificationsMenu';
+import { DemoResetButton } from './DemoResetButton';
 import { RoleSwitcher } from './RoleSwitcher';
 
 const navItems = [
@@ -139,8 +140,9 @@ export function SellerLayout() {
       </div>
 
       <div className="border-t border-ink-200 bg-ink-50 py-4">
-        <div className="page flex justify-center">
+        <div className="page flex flex-wrap items-center justify-center gap-3">
           <RoleSwitcher />
+          <DemoResetButton />
         </div>
       </div>
     </div>

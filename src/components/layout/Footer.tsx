@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { categories } from '@/data/categories';
+import { DemoResetButton } from './DemoResetButton';
 import { RoleSwitcher } from './RoleSwitcher';
 
 const columns = [
@@ -95,8 +96,9 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-ink-100 bg-ink-50 py-4">
-        <div className="page flex justify-center">
+        <div className="page flex flex-wrap items-center justify-center gap-3">
           <RoleSwitcher />
+          <DemoResetButton />
         </div>
       </div>
     </footer>

@@ -109,6 +109,7 @@ export function Header() {
             label="Заказы"
             badge={kpi.inWorkCount}
             badgeTone="neutral"
+            matchPrefix
           />
           <HeaderAction
             to="/favorites"
@@ -119,9 +120,19 @@ export function Header() {
             className="hidden sm:flex"
           />
           <HeaderAction to="/profile" icon={<User className="size-5" />} label="Профиль" className="hidden sm:flex" />
-          <Link
+          <NavLink
             to="/cart"
-            className="ml-1 flex h-11 items-center gap-2.5 rounded-lg bg-brand-600 px-3 text-white transition-colors hover:bg-brand-700"
+            isActive={(_, location) =>
+              location.pathname === '/cart' || location.pathname === '/checkout'
+            }
+            className={({ isActive }) =>
+              cn(
+                'ml-1 flex h-11 items-center gap-2.5 rounded-lg px-3 transition-colors',
+                isActive
+                  ? 'bg-brand-700 text-white ring-2 ring-brand-300 ring-inset'
+                  : 'bg-brand-600 text-white hover:bg-brand-700',
+              )
+            }
           >
             <span className="relative">
               <ShoppingCart className="size-5" />
@@ -135,7 +146,7 @@ export function Header() {
               <span className="block text-[10px] text-white/75">Корзина</span>
               <span className="block text-[13px] font-semibold">{moneyShort(total)}</span>
             </span>
-          </Link>
+          </NavLink>
         </div>
       </div>
 
@@ -174,6 +185,7 @@ function HeaderAction({
   badge,
   badgeTone = 'danger',
   className,
+  matchPrefix = false,
 }: {
   to: string;
   icon: React.ReactNode;
@@ -181,14 +193,21 @@ function HeaderAction({
   badge?: number;
   badgeTone?: 'danger' | 'neutral';
   className?: string;
+  matchPrefix?: boolean;
 }) {
   return (
-    <Link
+    <NavLink
       to={to}
-      className={cn(
-        'relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-ink-600 hover:bg-ink-100 hover:text-ink-900',
-        className,
-      )}
+      end={!matchPrefix}
+      className={({ isActive }) =>
+        cn(
+          'relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 transition-colors',
+          isActive
+            ? 'bg-brand-50 font-semibold text-brand-700'
+            : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
+          className,
+        )
+      }
     >
       {icon}
       <span className="hidden text-[11px] lg:block">{label}</span>
@@ -202,7 +221,7 @@ function HeaderAction({
           {badge}
         </span>
       ) : null}
-    </Link>
+    </NavLink>
   );
 }
 
@@ -255,13 +274,21 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
               ['/seller', 'Кабинет поставщика'],
             ].map(([to, label]) => (
               <li key={to}>
-                <Link
+                <NavLink
                   to={to}
+                  end={to !== '/orders'}
                   onClick={onClose}
-                  className="block rounded-lg px-2 py-2 text-sm text-ink-700 hover:bg-ink-50"
+                  className={({ isActive }) =>
+                    cn(
+                      'block rounded-lg px-2 py-2 text-sm transition-colors',
+                      isActive
+                        ? 'bg-brand-50 font-semibold text-brand-700'
+                        : 'text-ink-700 hover:bg-ink-50',
+                    )
+                  }
                 >
                   {label}
-                </Link>
+                </NavLink>
               </li>
             ))}
           </ul>

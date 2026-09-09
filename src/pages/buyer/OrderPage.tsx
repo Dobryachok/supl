@@ -27,6 +27,7 @@ import { DeliveryTracker } from '@/components/orders/DeliveryTracker';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { useCartActions } from '@/hooks/useCartActions';
 import { useChatActions } from '@/hooks/useChatActions';
+import { MarkDeliveredButton } from '@/components/orders/MarkDeliveredButton';
 import { uid } from '@/lib/ids';
 import {
   dateFull,
@@ -70,6 +71,7 @@ export function OrderPage() {
   const thread = state.threads.find((t) => t.orderId === order.id);
   const overdue = isOverdue(order);
   const canCancel = ['draft', 'sent', 'confirmed'].includes(order.status);
+  const canMarkDelivered = order.status === 'shipped';
   const canAccept = order.status === 'delivered';
 
   const openChat = () => {
@@ -163,6 +165,9 @@ export function OrderPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {canMarkDelivered && (
+            <MarkDeliveredButton order={order} label="Отметить «Доставлено»" />
+          )}
           {canAccept && (
             <LinkButton
               to={`/orders/${order.id}/acceptance`}

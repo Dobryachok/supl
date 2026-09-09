@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
+import { Building2, MapPin, Plus, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Field';
@@ -9,7 +8,7 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { uid } from '@/lib/ids';
 import { money, paymentLabels, withCount } from '@/lib/format';
-import { resetDemoData, useAppState, useDispatch } from '@/store/AppContext';
+import { useAppState, useDispatch } from '@/store/AppContext';
 import { ordersKpi } from '@/store/selectors';
 import type { Outlet } from '@/types';
 
@@ -17,10 +16,8 @@ export function ProfilePage() {
   const state = useAppState();
   const dispatch = useDispatch();
   const toast = useToast();
-  const navigate = useNavigate();
   const [tab, setTab] = useState('company');
   const [outletOpen, setOutletOpen] = useState(false);
-  const [resetOpen, setResetOpen] = useState(false);
   const [draft, setDraft] = useState<Omit<Outlet, 'id' | 'isDefault'>>({
     name: '',
     address: '',
@@ -61,21 +58,12 @@ export function ProfilePage() {
 
   return (
     <div className="page pt-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px]">{restaurant.name}</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            {restaurant.legalName} · ИНН {restaurant.inn} ·{' '}
-            {withCount(restaurant.outlets.length, 'точка', 'точки', 'точек')}
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          icon={<RefreshCw className="size-4" />}
-          onClick={() => setResetOpen(true)}
-        >
-          Сбросить демо-данные
-        </Button>
+      <div>
+        <h1 className="text-[26px]">{restaurant.name}</h1>
+        <p className="mt-1 text-[13px] text-ink-500">
+          {restaurant.legalName} · ИНН {restaurant.inn} ·{' '}
+          {withCount(restaurant.outlets.length, 'точка', 'точки', 'точек')}
+        </p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -307,31 +295,6 @@ export function ProfilePage() {
         </div>
       </Modal>
 
-      <Modal
-        open={resetOpen}
-        onClose={() => setResetOpen(false)}
-        title="Сбросить демо-данные"
-        description="Заявки, корзина, чаты и правки каталога вернутся к стартовому состоянию"
-        size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setResetOpen(false)}>
-              Отмена
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                resetDemoData(dispatch);
-                setResetOpen(false);
-                toast.success('Демо-данные сброшены');
-                navigate('/');
-              }}
-            >
-              Сбросить
-            </Button>
-          </>
-        }
-      />
     </div>
   );
 }

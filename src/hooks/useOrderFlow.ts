@@ -35,8 +35,12 @@ export function useOrderFlow() {
       advance(order, 'shipped', `Машина вышла в рейс, окно ${order.deliveryWindow}`);
     },
 
-    deliver(order: Order) {
-      advance(order, 'delivered', 'Доставлено на склад ресторана, ожидаем приёмку');
+    deliver(order: Order, actor: Role = 'seller') {
+      const comment =
+        actor === 'buyer'
+          ? 'Ресторан отметил поставку как доставленную, ожидаем приёмку'
+          : 'Доставлено на склад ресторана, ожидаем приёмку';
+      advance(order, 'delivered', comment, actor);
     },
 
     reject(order: Order, reason: string) {

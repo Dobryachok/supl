@@ -14,6 +14,7 @@ import { SupplierLogo } from '@/components/ui/ProductImage';
 import { DeliveryTrackerMini } from '@/components/orders/DeliveryTracker';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { useChatActions } from '@/hooks/useChatActions';
+import { MarkDeliveredButton } from '@/components/orders/MarkDeliveredButton';
 import { cn } from '@/lib/cn';
 import { money, withCount } from '@/lib/format';
 import { useAppState } from '@/store/AppContext';
@@ -130,6 +131,9 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
               </dl>
 
               <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                {order.status === 'shipped' && (
+                  <MarkDeliveredButton order={order} size="sm" stopPropagation />
+                )}
                 {order.status === 'delivered' && (
                   <div onClick={stopCardClick}>
                     <LinkButton
@@ -242,6 +246,9 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                 </p>
               </div>
               <div className="mt-auto flex flex-wrap gap-1.5 pt-7 sm:justify-start lg:justify-end">
+                {order.status === 'shipped' && (
+                  <MarkDeliveredButton order={order} size="sm" stopPropagation />
+                )}
                 {order.status === 'delivered' && (
                   <div onClick={stopCardClick}>
                     <LinkButton

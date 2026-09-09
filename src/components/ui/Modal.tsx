@@ -61,14 +61,16 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         className={cn(
-          'animate-slide-up relative my-auto w-full rounded-xl bg-white shadow-[var(--shadow-pop)]',
+          'animate-slide-up relative my-auto w-full overflow-hidden rounded-xl bg-white shadow-[var(--shadow-pop)]',
           modalSizes[size],
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-ink-200 px-5 py-4">
-          <div>
-            {title && <h3 className="text-base">{title}</h3>}
-            {description && <p className="mt-1 text-[13px] text-ink-500">{description}</p>}
+        <div className="flex items-start justify-between gap-4 border-b border-ink-200 px-5 py-4 text-left">
+          <div className="min-w-0 flex-1">
+            {title && <h3 className="text-base text-left">{title}</h3>}
+            {description && (
+              <p className="mt-1 text-left text-[13px] leading-relaxed text-ink-500">{description}</p>
+            )}
           </div>
           <button
             type="button"
@@ -80,10 +82,10 @@ export function Modal({
           </button>
         </div>
         {children != null && (
-          <div className="scroll-thin max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
+          <div className="scroll-thin max-h-[70vh] overflow-y-auto px-5 py-4 text-left">{children}</div>
         )}
         {footer && (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-ink-200 bg-ink-50 px-5 py-3">
+          <div className="flex flex-wrap justify-end gap-2 rounded-b-xl border-t border-ink-200 bg-ink-50 px-5 py-3 [&>:only-child]:w-full">
             {footer}
           </div>
         )}

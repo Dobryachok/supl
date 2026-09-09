@@ -192,10 +192,8 @@ export function CategoryPage() {
       <div className="mt-4 flex gap-5">
         <div className="hidden w-[260px] shrink-0 lg:block">
           <div className="card mb-3 p-3">
-            <p className="px-1 pb-1.5 text-[11px] font-semibold tracking-wide text-ink-400 uppercase">
-              Категории
-            </p>
-            <ul>
+            <p className="text-sm font-bold text-ink-900">Категории</p>
+            <ul className="mt-1">
               {categories.map((item) => (
                 <li key={item.id}>
                   <Link
