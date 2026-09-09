@@ -79,7 +79,7 @@ export function DeliveriesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const today = isoDate(startOfToday());
-  const view: PageView = searchParams.get('view') === 'list' ? 'list' : 'calendar';
+  const view: PageView = searchParams.get('view') === 'calendar' ? 'calendar' : 'list';
   const selectedDate = searchParams.get('date');
 
   const [visibleMonth, setVisibleMonth] = useState(
@@ -330,8 +330,8 @@ export function DeliveriesPage() {
         value={view}
         onChange={(id) => setView(id as PageView)}
         items={[
-          { id: 'calendar', label: 'Календарь', icon: <CalendarDays className="size-3.5" /> },
           { id: 'list', label: 'Список', icon: <LayoutList className="size-3.5" /> },
+          { id: 'calendar', label: 'Календарь', icon: <CalendarDays className="size-3.5" /> },
         ]}
       />
 
