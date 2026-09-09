@@ -2,11 +2,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { MouseEvent } from 'react';
 import {
   AlertTriangle,
+  CheckCircle2,
   Clock,
   MapPin,
   MessageSquare,
   PackageCheck,
   Phone,
+  Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
@@ -15,11 +17,12 @@ import { DeliveryTrackerMini } from '@/components/orders/DeliveryTracker';
 import { StatusBadge } from '@/components/orders/StatusBadge';
 import { useChatActions } from '@/hooks/useChatActions';
 import { MarkDeliveredButton } from '@/components/orders/MarkDeliveredButton';
+import { useOrderFlow } from '@/hooks/useOrderFlow';
 import { cn } from '@/lib/cn';
 import { money, withCount } from '@/lib/format';
 import { useAppState } from '@/store/AppContext';
 import { isOverdue, orderTotals } from '@/store/selectors';
-import type { Order, OrderLine } from '@/types';
+import type { Order, OrderLine, Role } from '@/types';
 
 function compactLinesSummary(lines: OrderLine[]): string {
   const prefix = withCount(lines.length, 'позиция', 'позиции', 'позиций');
@@ -32,16 +35,30 @@ function stopCardClick(event: MouseEvent) {
   event.stopPropagation();
 }
 
-export function DeliveryCard({ order, compact = false }: { order: Order; compact?: boolean }) {
+export function DeliveryCard({
+  order,
+  compact = false,
+  role = 'buyer',
+}: {
+  order: Order;
+  compact?: boolean;
+  role?: Role;
+}) {
   const state = useAppState();
   const chat = useChatActions();
+  const flow = useOrderFlow();
   const navigate = useNavigate();
+  const isSeller = role === 'seller';
   const supplier = state.suppliers.find((s) => s.id === order.supplierId);
   const outlet = state.restaurant.outlets.find((o) => o.id === order.outletId);
   const totals = orderTotals(order);
   const overdue = isOverdue(order);
+  const orderUrl = isSeller ? `/seller/orders/${order.id}` : `/orders/${order.id}`;
+  const counterpartyName = isSeller ? state.restaurant.name : order.supplierName;
+  const logoName = isSeller ? state.restaurant.name : supplier?.name ?? '';
+  const logoHue = isSeller ? 32 : supplier?.hue ?? 210;
 
-  const openOrder = () => navigate(`/orders/${order.id}`);
+  const openOrder = () => navigate(orderUrl);
 
   const openChat = () => {
     const threadId = chat.ensureThread({
@@ -49,8 +66,90 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
       orderId: order.id,
       subject: `Заявка ${order.number}`,
     });
-    navigate(`/chats?thread=${threadId}`);
+    navigate(isSeller ? `/seller/chats?thread=${threadId}` : `/chats?thread=${threadId}`);
   };
+
+  const renderActions = (alignEnd = false) => (
+    <div
+      className={cn(
+        'flex flex-wrap gap-1.5',
+        alignEnd ? 'mt-auto pt-7 sm:justify-start lg:justify-end' : 'shrink-0 justify-end',
+      )}
+    >
+      {isSeller ? (
+        <>
+          {order.status === 'sent' && (
+            <Button
+              size="sm"
+              icon={<CheckCircle2 className="size-3.5" />}
+              onClick={(event) => {
+                stopCardClick(event);
+                flow.confirm(order);
+              }}
+            >
+              Подтвердить
+            </Button>
+          )}
+          {order.status === 'confirmed' && (
+            <Button
+              size="sm"
+              icon={<Truck className="size-3.5" />}
+              onClick={(event) => {
+                stopCardClick(event);
+                flow.ship(order);
+              }}
+            >
+              Отправить
+            </Button>
+          )}
+          {order.status === 'shipped' && (
+            <Button
+              size="sm"
+              variant="success"
+              icon={<PackageCheck className="size-3.5" />}
+              onClick={(event) => {
+                stopCardClick(event);
+                flow.deliver(order);
+              }}
+            >
+              Доставлено
+            </Button>
+          )}
+          {order.status === 'delivered' && (
+            <Badge tone="progress" size="sm">Ждём приёмку</Badge>
+          )}
+        </>
+      ) : (
+        <>
+          {order.status === 'shipped' && (
+            <MarkDeliveredButton order={order} size="sm" stopPropagation />
+          )}
+          {order.status === 'delivered' && (
+            <div onClick={stopCardClick}>
+              <LinkButton
+                to={`/orders/${order.id}/acceptance`}
+                size="sm"
+                icon={<PackageCheck className="size-3.5" />}
+              >
+                Принять
+              </LinkButton>
+            </div>
+          )}
+        </>
+      )}
+      <Button
+        size="sm"
+        variant="secondary"
+        icon={<MessageSquare className="size-3.5" />}
+        onClick={(event) => {
+          stopCardClick(event);
+          openChat();
+        }}
+      >
+        Чат
+      </Button>
+    </div>
+  );
 
   return (
     <article
@@ -60,6 +159,7 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
         compact ? 'p-5' : 'p-4',
         overdue && 'border-danger-100',
         order.status === 'delivered' && 'border-warn-100',
+        isSeller && order.status === 'sent' && 'border-brand-200',
       )}
     >
       {compact ? (
@@ -67,10 +167,10 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="flex min-w-0 flex-1 items-end gap-3">
-                {supplier && (
+                {logoName && (
                   <SupplierLogo
-                    name={supplier.name}
-                    hue={supplier.hue}
+                    name={logoName}
+                    hue={logoHue}
                     className="size-14 shrink-0 rounded-lg aspect-square text-base"
                   />
                 )}
@@ -84,13 +184,17 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                       </Badge>
                     )}
                   </div>
-                  <Link
-                    to={`/suppliers/${order.supplierId}`}
-                    onClick={stopCardClick}
-                    className="mt-0.5 block truncate text-[13px] text-ink-600 hover:text-brand-600"
-                  >
-                    {order.supplierName}
-                  </Link>
+                  {isSeller ? (
+                    <p className="mt-0.5 truncate text-[13px] text-ink-600">{counterpartyName}</p>
+                  ) : (
+                    <Link
+                      to={`/suppliers/${order.supplierId}`}
+                      onClick={stopCardClick}
+                      className="mt-0.5 block truncate text-[13px] text-ink-600 hover:text-brand-600"
+                    >
+                      {counterpartyName}
+                    </Link>
+                  )}
                   <p className="mt-1 truncate text-xs text-ink-500" title={compactLinesSummary(order.lines)}>
                     {compactLinesSummary(order.lines)}
                   </p>
@@ -111,52 +215,34 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                     <span className="text-[11px] text-ink-500"> · {order.deliveryAddress}</span>
                   </p>
                 </div>
-                {supplier && (
+                {(outlet?.phone || (!isSeller && supplier)) && (
                   <div className="flex min-w-0 items-center gap-1">
                     <Phone className="size-3 shrink-0 text-ink-400" />
                     <p className="min-w-0 truncate">
-                      <a
-                        href={`tel:${supplier.contacts.phone.replace(/\s|\(|\)|-/g, '')}`}
-                        onClick={stopCardClick}
-                        className="hover:text-brand-600"
-                      >
-                        {supplier.contacts.phone}
-                      </a>
-                      {supplier.contacts.manager && (
-                        <span className="text-[11px] text-ink-500"> · {supplier.contacts.manager}</span>
+                      {(outlet?.contactName || (!isSeller && supplier?.contacts.manager)) && (
+                        <span className="font-medium text-ink-700">
+                          {outlet?.contactName ?? supplier?.contacts.manager}
+                        </span>
+                      )}
+                      {(outlet?.contactName || (!isSeller && supplier?.contacts.manager)) &&
+                        (outlet?.phone || supplier?.contacts.phone) && (
+                          <span className="text-ink-500"> · </span>
+                        )}
+                      {(outlet?.phone || supplier?.contacts.phone) && (
+                        <a
+                          href={`tel:${(outlet?.phone ?? supplier?.contacts.phone ?? '').replace(/\s|\(|\)|-/g, '')}`}
+                          onClick={stopCardClick}
+                          className="hover:text-brand-600"
+                        >
+                          {outlet?.phone ?? supplier?.contacts.phone}
+                        </a>
                       )}
                     </p>
                   </div>
                 )}
               </dl>
 
-              <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                {order.status === 'shipped' && (
-                  <MarkDeliveredButton order={order} size="sm" stopPropagation />
-                )}
-                {order.status === 'delivered' && (
-                  <div onClick={stopCardClick}>
-                    <LinkButton
-                      to={`/orders/${order.id}/acceptance`}
-                      size="sm"
-                      icon={<PackageCheck className="size-3.5" />}
-                    >
-                      Принять
-                    </LinkButton>
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<MessageSquare className="size-3.5" />}
-                  onClick={(event) => {
-                    stopCardClick(event);
-                    openChat();
-                  }}
-                >
-                  Чат
-                </Button>
-              </div>
+              {renderActions()}
             </div>
           </div>
 
@@ -165,10 +251,10 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[3.5rem_minmax(0,1fr)_auto] lg:items-start lg:gap-x-4">
-            {supplier && (
+            {logoName && (
               <SupplierLogo
-                name={supplier.name}
-                hue={supplier.hue}
+                name={logoName}
+                hue={logoHue}
                 className="size-14 sm:col-start-1 sm:row-start-1 lg:col-start-1 lg:row-start-1"
               />
             )}
@@ -182,13 +268,17 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                   </Badge>
                 )}
               </div>
-              <Link
-                to={`/suppliers/${order.supplierId}`}
-                onClick={stopCardClick}
-                className="mt-0.5 block text-[13px] text-ink-600 hover:text-brand-600"
-              >
-                {order.supplierName}
-              </Link>
+              {isSeller ? (
+                <p className="mt-0.5 text-[13px] text-ink-600">{counterpartyName}</p>
+              ) : (
+                <Link
+                  to={`/suppliers/${order.supplierId}`}
+                  onClick={stopCardClick}
+                  className="mt-0.5 block text-[13px] text-ink-600 hover:text-brand-600"
+                >
+                  {counterpartyName}
+                </Link>
+              )}
               <p className="mt-1 text-xs text-ink-500">
                 {withCount(order.lines.length, 'позиция', 'позиции', 'позиций')} ·{' '}
                 {order.lines
@@ -207,16 +297,16 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                   <p className="text-[11px] text-ink-500">{order.deliveryAddress}</p>
                 </div>
               </div>
-              {(outlet?.phone || supplier) && (
+              {(outlet?.phone || (!isSeller && supplier?.contacts.phone)) && (
                 <div className="flex min-w-0 items-center gap-1">
                   <Phone className="size-3 shrink-0 text-ink-400" />
                   <p className="min-w-0 truncate">
-                    {(outlet?.contactName || supplier?.contacts.manager) && (
+                    {(outlet?.contactName || (!isSeller && supplier?.contacts.manager)) && (
                       <span className="font-medium text-ink-700">
                         {outlet?.contactName ?? supplier?.contacts.manager}
                       </span>
                     )}
-                    {(outlet?.contactName || supplier?.contacts.manager) &&
+                    {(outlet?.contactName || (!isSeller && supplier?.contacts.manager)) &&
                       (outlet?.phone || supplier?.contacts.phone) && (
                         <span className="text-ink-500"> · </span>
                       )}
@@ -245,33 +335,7 @@ export function DeliveryCard({ order, compact = false }: { order: Order; compact
                   <span>{order.deliveryWindow}</span>
                 </p>
               </div>
-              <div className="mt-auto flex flex-wrap gap-1.5 pt-7 sm:justify-start lg:justify-end">
-                {order.status === 'shipped' && (
-                  <MarkDeliveredButton order={order} size="sm" stopPropagation />
-                )}
-                {order.status === 'delivered' && (
-                  <div onClick={stopCardClick}>
-                    <LinkButton
-                      to={`/orders/${order.id}/acceptance`}
-                      size="sm"
-                      icon={<PackageCheck className="size-3.5" />}
-                    >
-                      Принять
-                    </LinkButton>
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<MessageSquare className="size-3.5" />}
-                  onClick={(event) => {
-                    stopCardClick(event);
-                    openChat();
-                  }}
-                >
-                  Чат
-                </Button>
-              </div>
+              {renderActions(true)}
             </div>
           </div>
 

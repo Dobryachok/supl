@@ -1,26 +1,16 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   CalendarDays,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  MessageSquare,
   PackageCheck,
-  Phone,
   Truck,
-  User,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { Button, LinkButton } from '@/components/ui/Button';
+import { LinkButton } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs } from '@/components/ui/Tabs';
-import { DeliveryTrackerMini } from '@/components/orders/DeliveryTracker';
-import { StatusBadge } from '@/components/orders/StatusBadge';
-import { useChatActions } from '@/hooks/useChatActions';
-import { useOrderFlow } from '@/hooks/useOrderFlow';
+import { DeliveryCard } from '@/components/orders/DeliveryCard';
 import { cn } from '@/lib/cn';
 import {
   dateFull,
@@ -175,12 +165,12 @@ export function SellerDeliveriesPage() {
                 </h2>
                 <Badge tone={date === today ? 'info' : 'neutral'}>{relativeDay(date)}</Badge>
                 <span className="text-[13px] text-ink-500">
-                  {money(list.reduce((sum, o) => sum + orderTotals(o).total, 0))}
+                  {withCount(list.length, 'поставка', 'поставки', 'поставок')}
                 </span>
               </div>
               <div className="mt-2 space-y-2.5">
                 {list.map((order) => (
-                  <ShipmentCard key={order.id} order={order} />
+                  <DeliveryCard key={order.id} order={order} role="seller" />
                 ))}
               </div>
             </section>
@@ -226,133 +216,5 @@ function Tile({
       <p className="mt-2 text-[17px] font-bold text-ink-900">{value}</p>
       <p className="text-xs text-ink-500">{hint}</p>
     </div>
-  );
-}
-
-function ShipmentCard({ order }: { order: Order }) {
-  const state = useAppState();
-  const flow = useOrderFlow();
-  const chat = useChatActions();
-  const navigate = useNavigate();
-  const outlet = state.restaurant.outlets.find((o) => o.id === order.outletId);
-  const totals = orderTotals(order);
-  const overdue = isOverdue(order);
-
-  return (
-    <article
-      className={cn(
-        'card p-4 transition-shadow hover:shadow-hover',
-        overdue && 'border-danger-100',
-        order.status === 'sent' && 'border-brand-200',
-      )}
-    >
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_13.75rem_9.375rem] lg:items-start lg:gap-4">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to={`/seller/orders/${order.id}`}
-              className="text-sm font-bold text-ink-900 hover:text-brand-700"
-            >
-              {order.number}
-            </Link>
-            <StatusBadge status={order.status} size="sm" />
-            {overdue && (
-              <Badge tone="danger" size="sm" icon={<AlertTriangle className="size-3" />}>
-                Просрочена
-              </Badge>
-            )}
-          </div>
-          <p className="mt-0.5 text-[13px] text-ink-700">{state.restaurant.name}</p>
-          <p className="mt-1 text-xs text-ink-500">
-            {withCount(order.lines.length, 'позиция', 'позиции', 'позиций')} ·{' '}
-            {order.lines
-              .slice(0, 2)
-              .map((l) => l.name)
-              .join(', ')}
-            {order.lines.length > 2 ? ` и ещё ${order.lines.length - 2}` : ''}
-          </p>
-        </div>
-
-        <dl className="space-y-1 text-[13px] lg:col-start-2 lg:row-start-1">
-          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-x-1.5 text-ink-700">
-            <Clock className="size-3.5 text-ink-400" />
-            <span>{order.deliveryWindow}</span>
-          </div>
-          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-start gap-x-1.5 text-ink-600">
-            <MapPin className="mt-0.5 size-3.5 text-ink-400" />
-            <span>
-              {outlet?.name}
-              <span className="block text-xs text-ink-500">{order.deliveryAddress}</span>
-            </span>
-          </div>
-          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-x-1.5 text-ink-600">
-            <User className="size-3.5 text-ink-400" />
-            <span>{outlet?.contactName}</span>
-          </div>
-          <div className="grid grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-x-1.5 text-ink-600">
-            <Phone className="size-3.5 text-ink-400" />
-            <span>{outlet?.phone}</span>
-          </div>
-        </dl>
-
-        <div className="text-left lg:col-start-3 lg:row-start-1 lg:text-right">
-          <p className="text-[17px] font-bold text-ink-900">{money(totals.factTotal)}</p>
-          <p className="text-xs text-ink-500">
-            {order.deliveryFee === 0 ? 'доставка бесплатно' : `доставка ${money(order.deliveryFee)}`}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5 lg:justify-end">
-            {order.status === 'sent' && (
-              <Button
-                size="sm"
-                icon={<CheckCircle2 className="size-3.5" />}
-                onClick={() => flow.confirm(order)}
-              >
-                Подтвердить
-              </Button>
-            )}
-            {order.status === 'confirmed' && (
-              <Button
-                size="sm"
-                icon={<Truck className="size-3.5" />}
-                onClick={() => flow.ship(order)}
-              >
-                Отправить
-              </Button>
-            )}
-            {order.status === 'shipped' && (
-              <Button
-                size="sm"
-                variant="success"
-                icon={<PackageCheck className="size-3.5" />}
-                onClick={() => flow.deliver(order)}
-              >
-                Доставлено
-              </Button>
-            )}
-            {order.status === 'delivered' && <Badge tone="progress">Ждём приёмку</Badge>}
-            <LinkButton to={`/seller/orders/${order.id}`} size="sm" variant="secondary">
-              Заявка
-            </LinkButton>
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<MessageSquare className="size-3.5" />}
-              onClick={() => {
-                const threadId = chat.ensureThread({
-                  supplierId: order.supplierId,
-                  orderId: order.id,
-                  subject: `Заявка ${order.number}`,
-                });
-                navigate(`/seller/chats?thread=${threadId}`);
-              }}
-            >
-              Чат
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <DeliveryTrackerMini order={order} className="mt-3" />
-    </article>
   );
 }

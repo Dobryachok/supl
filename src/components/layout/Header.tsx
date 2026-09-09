@@ -22,6 +22,7 @@ import { cartCount, cartTotal, ordersKpi, unreadThreads } from '@/store/selector
 import { CategoryIcon } from './CategoryIcon';
 import { MegaMenu } from './MegaMenu';
 import { NotificationsMenu } from './NotificationsMenu';
+import { HeaderAction } from './HeaderAction';
 import { SearchBox } from './SearchBox';
 
 export function Logo({ compact }: { compact?: boolean }) {
@@ -245,53 +246,6 @@ function CategoryNavBar() {
         </button>
       </div>
     </div>
-  );
-}
-
-function HeaderAction({
-  to,
-  icon,
-  label,
-  badge,
-  badgeTone = 'danger',
-  className,
-  matchPrefix = false,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  badge?: number;
-  badgeTone?: 'danger' | 'neutral';
-  className?: string;
-  matchPrefix?: boolean;
-}) {
-  return (
-    <NavLink
-      to={to}
-      end={!matchPrefix}
-      className={({ isActive }) =>
-        cn(
-          'relative flex flex-col items-center gap-0.5 rounded-lg px-2 py-1 transition-colors',
-          isActive
-            ? 'bg-brand-50 font-semibold text-brand-700'
-            : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
-          className,
-        )
-      }
-    >
-      {icon}
-      <span className="hidden text-[11px] lg:block">{label}</span>
-      {badge ? (
-        <span
-          className={cn(
-            'absolute top-0 right-1 flex min-w-4 justify-center rounded-full px-1 text-[10px] leading-4 font-bold',
-            badgeTone === 'danger' ? 'bg-danger-500 text-white' : 'bg-ink-200 text-ink-700',
-          )}
-        >
-          {badge}
-        </span>
-      ) : null}
-    </NavLink>
   );
 }
 
