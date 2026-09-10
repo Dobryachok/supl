@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, FileSpreadsheet, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, Download, FileSpreadsheet, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { CatalogViewToggle, type CatalogView } from '@/components/seller/CatalogViewToggle';
+import { SellerImportModal } from '@/components/seller/SellerImportModal';
 import { SellerProductCard } from '@/components/seller/SellerProductCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
@@ -22,6 +23,7 @@ import { TD, TH, THead, TR, Table } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
 import { categories, categoryById } from '@/data/categories';
 import { useSimulatedLoad } from '@/hooks/useSimulatedLoad';
+import { downloadCsv, exportProductsCsv } from '@/lib/csv';
 import { cn } from '@/lib/cn';
 import { uid } from '@/lib/ids';
 import { money, qty as formatQty, withCount } from '@/lib/format';
@@ -53,6 +55,7 @@ export function SellerProductsPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [view, setView] = useState<CatalogView>(loadCatalogView);
 
   useEffect(() => {
@@ -81,6 +84,30 @@ export function SellerProductsPage() {
   const currentPage = Math.min(page, pageCount);
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const allSelected = pageItems.length > 0 && pageItems.every((p) => selected.includes(p.id));
+
+  const toggleSelected = (productId: string, checked: boolean) => {
+    setSelected((prev) =>
+      checked ? (prev.includes(productId) ? prev : [...prev, productId]) : prev.filter((id) => id !== productId),
+    );
+  };
+
+  const togglePageSelection = () => {
+    setSelected(
+      allSelected
+        ? selected.filter((id) => !pageItems.some((p) => p.id === id))
+        : [...selected, ...pageItems.map((p) => p.id).filter((id) => !selected.includes(id))],
+    );
+  };
+
+  const exportSelected = () => {
+    const products = all.filter((p) => selected.includes(p.id));
+    if (!products.length) return;
+    downloadCsv(`catalog-${products.length}.csv`, exportProductsCsv(products));
+    toast.success(
+      'Выгрузка готова',
+      `${withCount(products.length, 'позиция', 'позиции', 'позиций')} в CSV`,
+    );
+  };
 
   const duplicate = (productId: string) => {
     const source = all.find((p) => p.id === productId);
@@ -111,13 +138,13 @@ export function SellerProductsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <LinkButton
-            to="/seller/products/import"
+          <Button
             variant="secondary"
             icon={<FileSpreadsheet className="size-4" />}
+            onClick={() => setImportOpen(true)}
           >
             Импорт CSV
-          </LinkButton>
+          </Button>
           <LinkButton to="/seller/products/new" icon={<Plus className="size-4" />}>
             Добавить товар
           </LinkButton>
@@ -167,46 +194,71 @@ export function SellerProductsPage() {
         <CatalogViewToggle value={view} onChange={setView} className="ml-auto" />
       </div>
 
-      {view === 'list' && selected.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 p-3">
-          <p className="text-[13px] font-medium text-brand-800">
-            Выбрано {withCount(selected.length, 'товар', 'товара', 'товаров')}
-          </p>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                dispatch({ type: 'products/toggleActive', productIds: selected, isActive: true });
-                toast.success('Товары опубликованы');
-              }}
-            >
-              Включить
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                dispatch({ type: 'products/toggleActive', productIds: selected, isActive: false });
-                toast.info('Товары сняты с публикации');
-              }}
-            >
-              Выключить
-            </Button>
-            <Button
-              size="sm"
-              variant="danger"
-              icon={<Trash2 className="size-3.5" />}
-              onClick={() => setDeleteOpen(true)}
-            >
-              Удалить
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
-              Снять выделение
-            </Button>
-          </div>
+      <div
+        className={cn(
+          'mt-3 flex flex-wrap items-center gap-2 rounded-xl border p-3 transition-colors',
+          selected.length > 0 ? 'border-brand-100 bg-brand-50' : 'border-ink-200 bg-ink-50',
+        )}
+      >
+        <p
+          className={cn(
+            'text-[13px] font-medium',
+            selected.length > 0 ? 'text-brand-800' : 'text-ink-500',
+          )}
+        >
+          Выбрано {withCount(selected.length, 'товар', 'товара', 'товаров')}
+        </p>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<Download className="size-3.5" />}
+            onClick={exportSelected}
+            disabled={selected.length === 0}
+          >
+            Экспорт CSV
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              dispatch({ type: 'products/toggleActive', productIds: selected, isActive: true });
+              toast.success('Товары опубликованы');
+            }}
+            disabled={selected.length === 0}
+          >
+            Включить
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              dispatch({ type: 'products/toggleActive', productIds: selected, isActive: false });
+              toast.info('Товары сняты с публикации');
+            }}
+            disabled={selected.length === 0}
+          >
+            Выключить
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setSelected([])}
+            disabled={selected.length === 0}
+          >
+            Снять выделение
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            icon={<Trash2 className="size-3.5" />}
+            onClick={() => setDeleteOpen(true)}
+            disabled={selected.length === 0}
+          >
+            Удалить
+          </Button>
         </div>
-      )}
+      </div>
 
       <div className="mt-3">
         {loading ? (
@@ -219,30 +271,32 @@ export function SellerProductsPage() {
             action={<LinkButton to="/seller/products/new">Добавить товар</LinkButton>}
           />
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-            {pageItems.map((product) => (
-              <SellerProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="mb-2 flex items-center gap-2">
+              <Checkbox
+                checked={allSelected}
+                onChange={togglePageSelection}
+                label="Выбрать все на странице"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+              {pageItems.map((product) => (
+                <SellerProductCard
+                  key={product.id}
+                  product={product}
+                  selected={selected.includes(product.id)}
+                  onSelectChange={(checked) => toggleSelected(product.id, checked)}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="card overflow-hidden">
             <Table>
               <THead>
                 <TR>
                   <TH width="3%">
-                    <Checkbox
-                      checked={allSelected}
-                      onChange={() =>
-                        setSelected(
-                          allSelected
-                            ? selected.filter((id) => !pageItems.some((p) => p.id === id))
-                            : [
-                                ...selected,
-                                ...pageItems.map((p) => p.id).filter((id) => !selected.includes(id)),
-                              ],
-                        )
-                      }
-                    />
+                    <Checkbox checked={allSelected} onChange={togglePageSelection} />
                   </TH>
                   <TH>Товар</TH>
                   <TH width="14%">Категория</TH>
@@ -264,13 +318,7 @@ export function SellerProductsPage() {
                     <TD>
                       <Checkbox
                         checked={selected.includes(product.id)}
-                        onChange={() =>
-                          setSelected((prev) =>
-                            prev.includes(product.id)
-                              ? prev.filter((id) => id !== product.id)
-                              : [...prev, product.id],
-                          )
-                        }
+                        onChange={(e) => toggleSelected(product.id, e.target.checked)}
                       />
                     </TD>
                     <TD>
@@ -381,7 +429,7 @@ export function SellerProductsPage() {
               Отмена
             </Button>
             <Button
-              variant="danger"
+              variant="primary"
               onClick={() => {
                 dispatch({ type: 'products/remove', productIds: selected });
                 toast.info('Товары удалены из каталога');
@@ -398,6 +446,8 @@ export function SellerProductsPage() {
           Позиции пропадут из каталога и корзин ресторанов. Уже созданные заявки не изменятся.
         </p>
       </Modal>
+
+      <SellerImportModal open={importOpen} onClose={() => setImportOpen(false)} />
     </div>
   );
 }

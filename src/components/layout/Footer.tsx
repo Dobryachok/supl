@@ -20,7 +20,6 @@ const columns = [
     links: [
       ['/seller', 'Кабинет поставщика'],
       ['/seller/products', 'Управление каталогом'],
-      ['/seller/products/import', 'Импорт CSV'],
       ['/seller/orders', 'Обработка заявок'],
       ['/seller/profile', 'Профиль компании'],
     ],

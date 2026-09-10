@@ -21,7 +21,6 @@ import { SuppliersPage } from './pages/buyer/SuppliersPage';
 import { SellerChatsPage } from './pages/seller/SellerChatsPage';
 import { SellerDashboard } from './pages/seller/SellerDashboard';
 import { SellerDeliveriesPage } from './pages/seller/SellerDeliveriesPage';
-import { SellerImportPage } from './pages/seller/SellerImportPage';
 import { SellerOrderPage } from './pages/seller/SellerOrderPage';
 import { SellerOrdersPage } from './pages/seller/SellerOrdersPage';
 import { SellerProductFormPage } from './pages/seller/SellerProductFormPage';
@@ -58,7 +57,6 @@ export function App() {
         <Route path="deliveries" element={<SellerDeliveriesPage />} />
         <Route path="products" element={<SellerProductsPage />} />
         <Route path="products/new" element={<SellerProductFormPage />} />
-        <Route path="products/import" element={<SellerImportPage />} />
         <Route path="products/:id/edit" element={<SellerProductFormPage />} />
         <Route path="chats" element={<SellerChatsPage />} />
         <Route path="profile" element={<SellerProfilePage />} />

@@ -1,3 +1,8 @@
+import { categoryById, subcategoryById } from '@/data/categories';
+import { tempModeLabel } from '@/data/products';
+import { unitLabel } from '@/lib/format';
+import type { Product } from '@/types';
+
 export interface ParsedCsv {
   headers: string[];
   rows: string[][];
@@ -159,6 +164,40 @@ export function buildCsvTemplate(): string {
     'Отруб из толстого края, влажное созревание 21 день',
   ];
   return `\uFEFF${csvTemplateColumns.join(';')}\n${example.join(';')}`;
+}
+
+function csvCell(value: string | number): string {
+  const text = String(value);
+  if (/[;"\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+export function exportProductsCsv(products: Product[]): string {
+  const rows = products.map((product) => {
+    const category = categoryById.get(product.categoryId);
+    const subcategory = subcategoryById.get(product.subcategoryId);
+    return [
+      product.name,
+      product.article,
+      category?.name ?? '',
+      subcategory?.name ?? '',
+      product.brand,
+      product.country,
+      unitLabel(product.unit),
+      product.packSize,
+      product.price,
+      product.oldPrice ?? '',
+      product.stock,
+      product.minQty,
+      product.step,
+      tempModeLabel(product.tempMode),
+      product.description,
+    ]
+      .map(csvCell)
+      .join(';');
+  });
+
+  return `\uFEFF${csvTemplateColumns.join(';')}\n${rows.join('\n')}`;
 }
 
 export function downloadCsv(filename: string, content: string): void {

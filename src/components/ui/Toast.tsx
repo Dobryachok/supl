@@ -26,7 +26,7 @@ const ToastContext = createContext<ToastApi | null>(null);
 const icons: Record<ToastTone, ReactNode> = {
   success: <CheckCircle2 className="size-5 text-success-500" />,
   info: <Info className="size-5 text-brand-500" />,
-  error: <AlertTriangle className="size-5 text-danger-500" />,
+  error: <AlertTriangle className="size-5 text-brand-500" />,
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={item.id}
             className={cn(
               'animate-slide-up pointer-events-auto flex items-start gap-3 rounded-xl border bg-white p-3.5 shadow-[var(--shadow-pop)]',
-              item.tone === 'error' ? 'border-danger-100' : 'border-ink-200',
+              item.tone === 'error' ? 'border-brand-100' : 'border-ink-200',
             )}
           >
             {icons[item.tone]}

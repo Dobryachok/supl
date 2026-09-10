@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select } from '@/components/ui/Field';
 import { FileDrop, readFileAsText } from '@/components/ui/FileDrop';
+import { Modal } from '@/components/ui/Modal';
 import { TD, TH, THead, TR, Table } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
 import { categories } from '@/data/categories';
@@ -59,11 +59,10 @@ function num(value: string): number {
   return Number(value.replace(/\s/g, '').replace(',', '.'));
 }
 
-export function SellerImportPage() {
+export function SellerImportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const state = useAppState();
   const dispatch = useDispatch();
   const toast = useToast();
-  const navigate = useNavigate();
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
   const [mapping, setMapping] = useState<CsvField[]>([]);
   const [fileName, setFileName] = useState('');
@@ -72,6 +71,15 @@ export function SellerImportPage() {
   );
 
   const existing = productsOfSupplier(state, state.session.sellerSupplierId);
+
+  useEffect(() => {
+    if (!open) {
+      setParsed(null);
+      setMapping([]);
+      setFileName('');
+      setImported(null);
+    }
+  }, [open]);
 
   const results = useMemo<RowResult[]>(() => {
     if (!parsed) return [];
@@ -158,6 +166,11 @@ export function SellerImportPage() {
     skip: results.filter((r) => r.action === 'skip').length,
   };
 
+  const resetFile = () => {
+    setParsed(null);
+    setImported(null);
+  };
+
   const handleFile = async (file: File) => {
     const text = await readFileAsText(file);
     const next = parseCsv(text);
@@ -185,47 +198,75 @@ export function SellerImportPage() {
   };
 
   return (
-    <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px]">Импорт каталога из CSV</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            Загрузите прайс — сопоставьте колонки, проверьте предпросмотр и импортируйте
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="xl"
+      title="Импорт каталога из CSV"
+      description="Загрузите прайс, сопоставьте колонки и проверьте предпросмотр перед импортом"
+      footer={
+        imported ? (
+          <Button onClick={onClose}>Готово</Button>
+        ) : parsed ? (
+          <>
+            <Button variant="ghost" icon={<RotateCcw className="size-4" />} onClick={resetFile}>
+              Другой файл
+            </Button>
+            <Button variant="secondary" onClick={onClose}>
+              Отмена
+            </Button>
+            <Button onClick={runImport} disabled={stats.create + stats.update === 0}>
+              Импортировать {stats.create + stats.update}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="secondary"
+              icon={<Download className="size-4" />}
+              onClick={() => downloadCsv('supl-template.csv', buildCsvTemplate())}
+            >
+              Скачать шаблон
+            </Button>
+            <Button variant="secondary" onClick={onClose}>
+              Отмена
+            </Button>
+          </>
+        )
+      }
+    >
+      {imported ? (
+        <div className="flex items-start gap-3 rounded-xl border border-success-100 bg-success-50 p-4">
+          <CheckCircle2 className="size-5 shrink-0 text-success-600" />
+          <p className="text-[13px] text-success-700">
+            Импорт завершён: добавлено {imported.created}, обновлено {imported.updated}, пропущено{' '}
+            {imported.skipped}.
           </p>
         </div>
-        <Button
-          variant="secondary"
-          icon={<Download className="size-4" />}
-          onClick={() => downloadCsv('supl-template.csv', buildCsvTemplate())}
-        >
-          Скачать шаблон CSV
-        </Button>
-      </div>
-
-      {!parsed ? (
-        <div className="card mt-4 p-6">
+      ) : !parsed ? (
+        <>
           <FileDrop
             accept=".csv,text/csv"
             label="Перетащите CSV-файл с прайсом"
             hint="Разделитель «;» или «,», кодировка UTF-8. Обновление идёт по артикулу."
             onFiles={(files) => handleFile(files[0])}
           />
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
             {[
-              ['1. Загрузка', 'Файл читается в браузере, ничего не уходит на сервер'],
-              ['2. Сопоставление', 'Колонки определяются автоматически, можно поправить вручную'],
-              ['3. Импорт', 'Совпадения по артикулу обновляются, новые позиции добавляются'],
+              ['Загрузка', 'Файл читается в браузере'],
+              ['Сопоставление', 'Колонки определяются автоматически'],
+              ['Импорт', 'Совпадения по артикулу обновляются'],
             ].map(([title, text]) => (
               <div key={title} className="rounded-lg bg-ink-50 p-3">
                 <p className="text-[13px] font-semibold text-ink-900">{title}</p>
-                <p className="mt-1 text-xs text-ink-500">{text}</p>
+                <p className="mt-0.5 text-xs text-ink-500">{text}</p>
               </div>
             ))}
           </div>
-        </div>
+        </>
       ) : (
-        <>
-          <div className="card mt-4 flex flex-wrap items-center gap-3 p-4">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-ink-200 bg-ink-50 p-3">
             <FileSpreadsheet className="size-5 text-brand-600" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink-900">{fileName}</p>
@@ -234,25 +275,15 @@ export function SellerImportPage() {
                 {parsed.headers.length} колонок
               </p>
             </div>
-            <Button
-              variant="ghost"
-              icon={<RotateCcw className="size-4" />}
-              onClick={() => {
-                setParsed(null);
-                setImported(null);
-              }}
-            >
-              Загрузить другой файл
-            </Button>
           </div>
 
-          <section className="card mt-3 p-4">
-            <h2 className="text-[15px]">Сопоставление колонок</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <section>
+            <h4 className="text-[13px] font-semibold text-ink-900">Сопоставление колонок</h4>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {parsed.headers.map((header, i) => (
-                <div key={`${header}-${i}`} className="rounded-lg border border-ink-200 p-3">
+                <div key={`${header}-${i}`} className="rounded-lg border border-ink-200 p-2.5">
                   <p className="truncate text-[13px] font-semibold text-ink-900">{header}</p>
-                  <p className="mt-0.5 mb-2 truncate text-xs text-ink-500">
+                  <p className="mt-0.5 mb-1.5 truncate text-xs text-ink-500">
                     пример: {parsed.rows[0]?.[i] || '—'}
                   </p>
                   <Select
@@ -277,105 +308,89 @@ export function SellerImportPage() {
             </div>
           </section>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="card p-4">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-ink-50 p-3">
               <p className="text-[11px] tracking-wide text-ink-500 uppercase">Будет добавлено</p>
-              <p className="mt-1 text-[22px] font-bold text-success-600">{stats.create}</p>
+              <p className="mt-0.5 text-xl font-bold text-success-600">{stats.create}</p>
             </div>
-            <div className="card p-4">
+            <div className="rounded-lg bg-ink-50 p-3">
               <p className="text-[11px] tracking-wide text-ink-500 uppercase">Будет обновлено</p>
-              <p className="mt-1 text-[22px] font-bold text-brand-600">{stats.update}</p>
+              <p className="mt-0.5 text-xl font-bold text-brand-600">{stats.update}</p>
             </div>
-            <div className="card p-4">
+            <div className="rounded-lg bg-ink-50 p-3">
               <p className="text-[11px] tracking-wide text-ink-500 uppercase">С ошибками</p>
-              <p className="mt-1 text-[22px] font-bold text-danger-600">{stats.skip}</p>
+              <p className="mt-0.5 text-xl font-bold text-danger-600">{stats.skip}</p>
             </div>
           </div>
 
-          <section className="card mt-3 overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 p-4">
-              <h2 className="text-[15px]">Предпросмотр</h2>
-              <Button onClick={runImport} disabled={stats.create + stats.update === 0}>
-                Импортировать {stats.create + stats.update}
-              </Button>
-            </div>
+          <section>
+            <h4 className="text-[13px] font-semibold text-ink-900">Предпросмотр</h4>
             {results.length === 0 ? (
-              <EmptyState title="В файле нет строк" compact className="m-4 border-0" />
+              <EmptyState title="В файле нет строк" compact className="mt-2 border-0" />
             ) : (
-              <Table>
-                <THead>
-                  <TR>
-                    <TH width="5%">№</TH>
-                    <TH>Товар</TH>
-                    <TH width="14%">Категория</TH>
-                    <TH width="10%" align="right">
-                      Цена
-                    </TH>
-                    <TH width="10%" align="right">
-                      Остаток
-                    </TH>
-                    <TH width="22%">Результат</TH>
-                  </TR>
-                </THead>
-                <tbody>
-                  {results.slice(0, 40).map((result) => (
-                    <TR key={result.index}>
-                      <TD className="text-xs text-ink-500">{result.index + 2}</TD>
-                      <TD>
-                        <p className="text-[13px] text-ink-900">
-                          {result.product?.name ?? parsed.rows[result.index]?.[0] ?? '—'}
-                        </p>
-                        <p className="text-xs text-ink-500">
-                          арт. {result.product?.article ?? '—'}
-                        </p>
-                      </TD>
-                      <TD className="text-[13px] text-ink-600">
-                        {categories.find((c) => c.id === result.product?.categoryId)?.name ?? '—'}
-                      </TD>
-                      <TD align="right" className="text-[13px]">
-                        {result.product ? money(result.product.price) : '—'}
-                      </TD>
-                      <TD align="right" className="text-[13px]">
-                        {result.product?.stock ?? '—'}
-                      </TD>
-                      <TD>
-                        {result.action === 'skip' ? (
-                          <span className="flex items-start gap-1.5 text-xs text-danger-600">
-                            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-                            {result.errors.join(', ')}
-                          </span>
-                        ) : (
-                          <Badge tone={result.action === 'create' ? 'success' : 'info'}>
-                            {result.action === 'create' ? 'Новая позиция' : 'Обновление по артикулу'}
-                          </Badge>
-                        )}
-                      </TD>
+              <div className="mt-2 overflow-hidden rounded-xl border border-ink-200">
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH width="5%">№</TH>
+                      <TH>Товар</TH>
+                      <TH width="14%">Категория</TH>
+                      <TH width="10%" align="right">
+                        Цена
+                      </TH>
+                      <TH width="10%" align="right">
+                        Остаток
+                      </TH>
+                      <TH width="22%">Результат</TH>
                     </TR>
-                  ))}
-                </tbody>
-              </Table>
-            )}
-            {results.length > 40 && (
-              <p className="border-t border-ink-100 p-3 text-center text-xs text-ink-500">
-                Показаны первые 40 строк из {results.length}
-              </p>
+                  </THead>
+                  <tbody>
+                    {results.slice(0, 20).map((result) => (
+                      <TR key={result.index}>
+                        <TD className="text-xs text-ink-500">{result.index + 2}</TD>
+                        <TD>
+                          <p className="text-[13px] text-ink-900">
+                            {result.product?.name ?? parsed.rows[result.index]?.[0] ?? '—'}
+                          </p>
+                          <p className="text-xs text-ink-500">
+                            арт. {result.product?.article ?? '—'}
+                          </p>
+                        </TD>
+                        <TD className="text-[13px] text-ink-600">
+                          {categories.find((c) => c.id === result.product?.categoryId)?.name ?? '—'}
+                        </TD>
+                        <TD align="right" className="text-[13px]">
+                          {result.product ? money(result.product.price) : '—'}
+                        </TD>
+                        <TD align="right" className="text-[13px]">
+                          {result.product?.stock ?? '—'}
+                        </TD>
+                        <TD>
+                          {result.action === 'skip' ? (
+                            <span className="flex items-start gap-1.5 text-xs text-danger-600">
+                              <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                              {result.errors.join(', ')}
+                            </span>
+                          ) : (
+                            <Badge tone={result.action === 'create' ? 'success' : 'info'}>
+                              {result.action === 'create' ? 'Новая позиция' : 'Обновление по артикулу'}
+                            </Badge>
+                          )}
+                        </TD>
+                      </TR>
+                    ))}
+                  </tbody>
+                </Table>
+                {results.length > 20 && (
+                  <p className="border-t border-ink-100 p-2 text-center text-xs text-ink-500">
+                    Показаны первые 20 строк из {results.length}
+                  </p>
+                )}
+              </div>
             )}
           </section>
-
-          {imported && (
-            <div className="card mt-3 flex flex-wrap items-center gap-3 border-success-100 bg-success-50 p-4">
-              <CheckCircle2 className="size-5 text-success-600" />
-              <p className="flex-1 text-[13px] text-success-700">
-                Импорт завершён: добавлено {imported.created}, обновлено {imported.updated},
-                пропущено {imported.skipped}.
-              </p>
-              <Button size="sm" onClick={() => navigate('/seller/products')}>
-                Открыть каталог
-              </Button>
-            </div>
-          )}
-        </>
+        </div>
       )}
-    </div>
+    </Modal>
   );
 }

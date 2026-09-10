@@ -31,7 +31,7 @@ export interface ModalProps {
   title?: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   children?: ReactNode;
 }
 
@@ -39,6 +39,7 @@ const modalSizes = {
   sm: 'max-w-md',
   md: 'max-w-2xl',
   lg: 'max-w-4xl',
+  xl: 'max-w-5xl',
 };
 
 export function Modal({

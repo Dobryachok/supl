@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import {
   Building2,
-  FileSpreadsheet,
   LayoutDashboard,
   MessageSquare,
   Package,
@@ -27,14 +26,7 @@ const navItems = [
     badgeKey: 'orders' as const,
   },
   { to: '/seller/deliveries', label: 'Отгрузки', icon: Truck },
-  {
-    to: '/seller/products',
-    label: 'Каталог',
-    icon: Package,
-    isActive: (_: boolean, { pathname }: { pathname: string }) =>
-      pathname.startsWith('/seller/products') && !pathname.startsWith('/seller/products/import'),
-  },
-  { to: '/seller/products/import', label: 'Импорт', icon: FileSpreadsheet },
+  { to: '/seller/products', label: 'Каталог', icon: Package },
   {
     to: '/seller/chats',
     label: 'Чаты',
