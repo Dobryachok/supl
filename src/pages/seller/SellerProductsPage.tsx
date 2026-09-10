@@ -1,9 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, FileSpreadsheet, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { CatalogViewToggle, type CatalogView } from '@/components/seller/CatalogViewToggle';
+import { SellerProductCard } from '@/components/seller/SellerProductCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
-import { Checkbox, Input, Select, Switch, toolbarInputShellClass } from '@/components/ui/Field';
+import {
+  Checkbox,
+  Input,
+  Select,
+  Switch,
+  toolbarInputShellClass,
+  toolbarSelectClass,
+} from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -20,6 +29,17 @@ import { useAppState, useDispatch } from '@/store/AppContext';
 import { productsOfSupplier } from '@/store/selectors';
 
 const PAGE_SIZE = 12;
+const CATALOG_VIEW_KEY = 'supl.seller.products.view';
+
+function loadCatalogView(): CatalogView {
+  try {
+    const stored = localStorage.getItem(CATALOG_VIEW_KEY);
+    if (stored === 'grid' || stored === 'list') return stored;
+    return localStorage.getItem('supl.seller.profile.catalogView') === 'grid' ? 'grid' : 'list';
+  } catch {
+    return 'list';
+  }
+}
 
 export function SellerProductsPage() {
   const state = useAppState();
@@ -33,6 +53,15 @@ export function SellerProductsPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [view, setView] = useState<CatalogView>(loadCatalogView);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATALOG_VIEW_KEY, view);
+    } catch {
+      /* ignore */
+    }
+  }, [view]);
 
   const all = productsOfSupplier(state, state.session.sellerSupplierId);
 
@@ -95,7 +124,7 @@ export function SellerProductsPage() {
         </div>
       </div>
 
-      <div className="card mt-4 flex flex-wrap items-center gap-3 p-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <Input
           value={query}
           onChange={(e) => {
@@ -104,7 +133,8 @@ export function SellerProductsPage() {
           }}
           placeholder="Название, артикул, бренд"
           leading={<Search className="size-4" />}
-          className={cn(toolbarInputShellClass, 'w-full sm:w-72')}
+          className={cn(toolbarInputShellClass, 'min-w-0 flex-1 basis-48')}
+          aria-label="Поиск по каталогу"
         />
         <Select
           value={categoryId}
@@ -112,7 +142,8 @@ export function SellerProductsPage() {
             setCategoryId(e.target.value);
             setPage(1);
           }}
-          className="h-10 w-56"
+          className={cn(toolbarSelectClass, 'w-full max-w-[11rem] shrink-0 sm:w-44')}
+          aria-label="Категория"
         >
           <option value="">Все категории</option>
           {categories.map((category) => (
@@ -124,16 +155,19 @@ export function SellerProductsPage() {
         <Switch
           checked={onlyZero}
           onChange={(e) => setOnlyZero(e.target.checked)}
-          label="Только без остатка"
+          label="Без остатка"
+          className="shrink-0 text-[13px]"
         />
         <Switch
           checked={onlyInactive}
           onChange={(e) => setOnlyInactive(e.target.checked)}
-          label="Только выключенные"
+          label="Выключенные"
+          className="shrink-0 text-[13px]"
         />
+        <CatalogViewToggle value={view} onChange={setView} className="ml-auto" />
       </div>
 
-      {selected.length > 0 && (
+      {view === 'list' && selected.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 p-3">
           <p className="text-[13px] font-medium text-brand-800">
             Выбрано {withCount(selected.length, 'товар', 'товара', 'товаров')}
@@ -184,6 +218,12 @@ export function SellerProductsPage() {
             text="Измените фильтры или добавьте новую позицию в каталог."
             action={<LinkButton to="/seller/products/new">Добавить товар</LinkButton>}
           />
+        ) : view === 'grid' ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            {pageItems.map((product) => (
+              <SellerProductCard key={product.id} product={product} />
+            ))}
+          </div>
         ) : (
           <div className="card overflow-hidden">
             <Table>
