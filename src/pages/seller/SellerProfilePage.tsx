@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   BadgeCheck,
-  Eye,
   Package,
   Plus,
   Save,
@@ -12,7 +11,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { Button, LinkButton } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { SupplierLogo } from '@/components/ui/ProductImage';
 import { Rating } from '@/components/ui/Rating';
@@ -79,13 +78,6 @@ export function SellerProfilePage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <LinkButton
-            to={`/suppliers/${supplier.id}`}
-            variant="secondary"
-            icon={<Eye className="size-4" />}
-          >
-            Открыть витрину
-          </LinkButton>
           <Button icon={<Save className="size-4" />} onClick={save} disabled={!dirty}>
             {dirty ? 'Сохранить изменения' : 'Всё сохранено'}
           </Button>

@@ -6,14 +6,8 @@ import { SellerImportModal } from '@/components/seller/SellerImportModal';
 import { SellerProductCard } from '@/components/seller/SellerProductCard';
 import { Badge } from '@/components/ui/Badge';
 import { Button, LinkButton } from '@/components/ui/Button';
-import {
-  Checkbox,
-  Input,
-  Select,
-  Switch,
-  toolbarInputShellClass,
-  toolbarSelectClass,
-} from '@/components/ui/Field';
+import { Checkbox, Input, Switch, toolbarInputShellClass } from '@/components/ui/Field';
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
@@ -49,7 +43,7 @@ export function SellerProductsPage() {
   const toast = useToast();
   const loading = useSimulatedLoad([state.session.sellerSupplierId]);
   const [query, setQuery] = useState('');
-  const [categoryId, setCategoryId] = useState('');
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [onlyInactive, setOnlyInactive] = useState(false);
   const [onlyZero, setOnlyZero] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -71,14 +65,19 @@ export function SellerProductsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return all.filter((product) => {
-      if (categoryId && product.categoryId !== categoryId) return false;
+      if (categoryIds.length > 0 && !categoryIds.includes(product.categoryId)) return false;
       if (onlyInactive && product.isActive) return false;
       if (onlyZero && product.stock > 0) return false;
       if (q && !`${product.name} ${product.article} ${product.brand}`.toLowerCase().includes(q))
         return false;
       return true;
     });
-  }, [all, query, categoryId, onlyInactive, onlyZero]);
+  }, [all, query, categoryIds, onlyInactive, onlyZero]);
+
+  const categoryOptions = useMemo(
+    () => categories.map((category) => ({ value: category.id, label: category.name })),
+    [],
+  );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -152,33 +151,29 @@ export function SellerProductsPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Название, артикул, бренд"
-          leading={<Search className="size-4" />}
-          className={cn(toolbarInputShellClass, 'min-w-0 flex-1 basis-48')}
-          aria-label="Поиск по каталогу"
-        />
-        <Select
-          value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
-            setPage(1);
-          }}
-          className={cn(toolbarSelectClass, 'w-full max-w-[11rem] shrink-0 sm:w-44')}
-          aria-label="Категория"
-        >
-          <option value="">Все категории</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </Select>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <Input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Название, артикул, бренд"
+            leading={<Search className="size-4" />}
+            className={cn(toolbarInputShellClass, 'min-w-0 flex-1')}
+            aria-label="Поиск по каталогу"
+          />
+          <MultiSelect
+            placeholder="Все категории"
+            options={categoryOptions}
+            value={categoryIds}
+            onChange={(ids) => {
+              setCategoryIds(ids);
+              setPage(1);
+            }}
+            className="w-56 shrink-0"
+          />
+        </div>
         <Switch
           checked={onlyZero}
           onChange={(e) => setOnlyZero(e.target.checked)}

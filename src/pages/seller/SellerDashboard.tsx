@@ -79,15 +79,12 @@ export function SellerDashboard() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px]">Дашборд поставщика</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            {supplier?.legalName} · рейтинг {supplier?.rating} ·{' '}
-            {withCount(supplier?.reviewsCount ?? 0, 'отзыв', 'отзыва', 'отзывов')}
-          </p>
-        </div>
-        <LinkButton to="/seller/products/new">Добавить товар</LinkButton>
+      <div>
+        <h1 className="text-[26px]">Дашборд поставщика</h1>
+        <p className="mt-1 text-[13px] text-ink-500">
+          {supplier?.legalName} · рейтинг {supplier?.rating} ·{' '}
+          {withCount(supplier?.reviewsCount ?? 0, 'отзыв', 'отзыва', 'отзывов')}
+        </p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
