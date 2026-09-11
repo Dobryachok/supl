@@ -74,11 +74,21 @@ function SortableHeader({
   );
 }
 
-export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; base?: string }) {
+export function OrdersTable({
+  orders,
+  base = '/orders',
+  role = 'buyer',
+}: {
+  orders: Order[];
+  base?: string;
+  role?: 'buyer' | 'seller';
+}) {
   const state = useAppState();
   const navigate = useNavigate();
   const today = isoDate(startOfToday());
   const [sort, setSort] = useState<SortState>(null);
+  const isSeller = role === 'seller';
+  const counterpartyLabel = isSeller ? 'Ресторан' : 'Поставщик';
 
   const sortedOrders = useMemo(() => {
     if (!sort) return orders;
@@ -93,9 +103,18 @@ export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; bas
         case 'order':
           result = a.createdAt.localeCompare(b.createdAt);
           break;
-        case 'supplier':
-          result = a.supplierName.localeCompare(b.supplierName, 'ru');
+        case 'supplier': {
+          if (isSeller) {
+            const outletA =
+              state.restaurant.outlets.find((o) => o.id === a.outletId)?.name ?? '';
+            const outletB =
+              state.restaurant.outlets.find((o) => o.id === b.outletId)?.name ?? '';
+            result = outletA.localeCompare(outletB, 'ru');
+          } else {
+            result = a.supplierName.localeCompare(b.supplierName, 'ru');
+          }
           break;
+        }
         case 'composition':
           result = a.lines.length - b.lines.length;
           if (result === 0) {
@@ -120,7 +139,7 @@ export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; bas
     });
 
     return list;
-  }, [orders, sort]);
+  }, [orders, sort, isSeller, state.restaurant.outlets]);
 
   const handleSort = (column: SortColumn) => {
     setSort((current) => nextSortState(column, current));
@@ -132,7 +151,7 @@ export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; bas
         <TR>
           <SortableHeader label="Заявка" column="order" sort={sort} onSort={handleSort} width="17%" />
           <SortableHeader
-            label="Поставщик"
+            label={counterpartyLabel}
             column="supplier"
             sort={sort}
             onSort={handleSort}
@@ -164,6 +183,10 @@ export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; bas
           const totals = orderTotals(order);
           const overdue = isOverdue(order);
           const outlet = state.restaurant.outlets.find((o) => o.id === order.outletId);
+          const counterpartyName = isSeller ? state.restaurant.name : order.supplierName;
+          const logoName = isSeller ? state.restaurant.name : supplier?.name ?? '';
+          const logoHue = isSeller ? 32 : supplier?.hue ?? 210;
+
           return (
             <TR key={order.id} onClick={() => navigate(`${base}/${order.id}`)}>
               <TD>
@@ -178,16 +201,10 @@ export function OrdersTable({ orders, base = '/orders' }: { orders: Order[]; bas
               </TD>
               <TD>
                 <div className="flex items-center gap-2">
-                  {supplier && (
-                    <SupplierLogo
-                      name={supplier.name}
-                      hue={supplier.hue}
-                      className="size-8 text-[11px]"
-                    />
-                  )}
+                  <SupplierLogo name={logoName} hue={logoHue} className="size-8 text-[11px]" />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-medium text-ink-900">
-                      {order.supplierName}
+                      {counterpartyName}
                     </p>
                     <p className="truncate text-xs text-ink-500">{outlet?.name ?? '—'}</p>
                   </div>
