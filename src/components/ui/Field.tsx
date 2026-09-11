@@ -127,10 +127,15 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 }
 
 export function Checkbox({ label, count, className, ...rest }: CheckboxProps) {
+  const hasCaption = label != null || count !== undefined;
+
   return (
     <label
       className={cn(
-        'flex cursor-pointer items-center gap-2 py-1 text-sm text-ink-700 select-none hover:text-ink-900',
+        'flex cursor-pointer items-center select-none',
+        hasCaption
+          ? 'gap-2 py-1 text-sm text-ink-700 hover:text-ink-900'
+          : 'justify-center',
         rest.disabled && 'cursor-not-allowed opacity-50',
         className,
       )}
@@ -140,7 +145,7 @@ export function Checkbox({ label, count, className, ...rest }: CheckboxProps) {
         className="size-4 shrink-0 cursor-pointer accent-brand-600"
         {...rest}
       />
-      <span className="flex-1">{label}</span>
+      {label != null && <span className="flex-1">{label}</span>}
       {count !== undefined && <span className="text-xs text-ink-400">{count}</span>}
     </label>
   );

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, ShoppingBag } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Input, Select, toolbarInputShellClass } from '@/components/ui/Field';
+import { Input, Select, toolbarInputShellClass, toolbarSelectClass } from '@/components/ui/Field';
 import { RowsSkeleton } from '@/components/ui/Skeleton';
 import { Tabs } from '@/components/ui/Tabs';
 import { DeliveryCard } from '@/components/orders/DeliveryCard';
@@ -57,45 +57,47 @@ export function SellerOrdersPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px]">Заявки от ресторанов</h1>
-          <p className="mt-1 text-[13px] text-ink-500">
-            Подтверждайте состав, назначайте машину и отмечайте статусы доставки
-          </p>
-        </div>
+      <div>
+        <h1 className="text-[26px]">Заявки от ресторанов</h1>
+        <p className="mt-1 text-[13px] text-ink-500">
+          Подтверждайте состав, назначайте машину и отмечайте статусы доставки
+        </p>
+      </div>
+
+      <div className="mt-4 flex min-w-0 flex-wrap items-center gap-3">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Номер заявки или товар"
           leading={<Search className="size-4" />}
-          className={cn(toolbarInputShellClass, 'w-full sm:w-72')}
-        />
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          variant="pills"
-          items={[
-            ...tabs.map((item) => ({
-              id: item.id,
-              label: item.label,
-              count: orders.filter((o) => item.statuses.includes(o.status)).length,
-            })),
-            { id: 'all', label: 'Все', count: orders.length },
-          ]}
+          className={cn(toolbarInputShellClass, 'min-w-0 w-full flex-1 basis-48')}
+          aria-label="Поиск заявок"
         />
         <Select
           value={sort}
           onChange={(e) => setSort(e.target.value as 'created' | 'delivery')}
-          className="ml-auto h-10 w-52 text-sm"
+          className={cn(toolbarSelectClass, '!flex-none w-full shrink-0 sm:w-44')}
+          aria-label="Сортировка"
         >
-          <option value="delivery">Сортировка: по дате доставки</option>
-          <option value="created">Сортировка: по дате создания</option>
+          <option value="delivery">По дате доставки</option>
+          <option value="created">По дате создания</option>
         </Select>
       </div>
+
+      <Tabs
+        className="mt-3 min-w-0"
+        value={tab}
+        onChange={setTab}
+        variant="pills"
+        items={[
+          ...tabs.map((item) => ({
+            id: item.id,
+            label: item.label,
+            count: orders.filter((o) => item.statuses.includes(o.status)).length,
+          })),
+          { id: 'all', label: 'Все', count: orders.length },
+        ]}
+      />
 
       <div className="mt-4">
         {loading ? (
@@ -103,8 +105,8 @@ export function SellerOrdersPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<ShoppingBag className="size-6" />}
-            title="Заявок в этой вкладке нет"
-            text="Переключите вкладку или дождитесь новых заявок от ресторанов."
+            title="Заявок по фильтрам нет"
+            text="Переключите статус или измените поиск — или дождитесь новых заявок от ресторанов."
             compact
           />
         ) : (
